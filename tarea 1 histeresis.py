@@ -21,7 +21,7 @@ data = pd.DataFrame(datos, columns=['t', 'B', 'H'])
 
 plt.figure(figsize=(10, 6))
 plt.plot(data['t'], data['H'], marker='o', linestyle='-', label='H vs t', color='blue')
-plt.plot(data['t'], data['B'], marker='s', linestyle='None', label='B vs t', color='red')
+plt.plot(data['t'], data['B'], marker='o', linestyle='None', label='B vs t', color='red')
 plt.title('Gráfica de H y B en función de t')
 plt.xlabel('t')
 plt.ylabel('Valores de H y B')
@@ -30,4 +30,20 @@ plt.grid()
 
 plt.savefig('grafica_H_B_vs_t.pdf')
 
-plt.show()
+t = data['t']  
+B = data['B']  
+
+# Asegurarse de que los datos estén igualmente espaciados
+delta_t = np.mean(np.diff(t))  # Intervalo promedio entre valores de t
+
+# Aplicar la FFT
+frecuencias = np.fft.fftfreq(len(B), d=delta_t)  # Frecuencias asociadas
+espectro = np.fft.fft(B)  # Transformada de Fourier
+
+# Filtrar frecuencias positivas
+frecuencias_positivas = frecuencias[frecuencias > 0]
+espectro_positivo = 2.0 / len(B) * np.abs(espectro[frecuencias > 0])
+
+# Paso 2: Encontrar la frecuencia dominante
+frecuencia_dominante = frecuencias_positivas[np.argmax(espectro_positivo)]
+print(f"La frecuencia dominante es {frecuencia_dominante:.4f} Hz")
