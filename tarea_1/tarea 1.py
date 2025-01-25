@@ -4,6 +4,7 @@ import sympy as sym
 from scipy.optimize import curve_fit
 from scipy.signal import medfilt
 import pandas as pd
+from scipy.integrate import simps
 
 '''Ejercicio 1'''
 
@@ -23,7 +24,6 @@ def filtered_data(data):
 
 y_data_filtered = filtered_data(data)[0]
 
-print(f"1.a) Número de datos eliminados : {filtered_data(data)[1]}")
 plt.plot(x_data, y_data, label="Original data", color = "darkturquoise")
 plt.plot(x_data, y_data_filtered, label="Filtered data", color = "coral")
 plt.xlabel('Wavelength (pm)')
@@ -35,8 +35,32 @@ plt.tight_layout()
 
 output_path = "limpieza.pdf"
 plt.savefig(output_path)
-plt.show()
 
 print(f"1.a) Número de datos eliminados : {filtered_data(data)[1]}")
 
 '''1b'''
+
+
+print("1.b) Método: ")
+
+#1.c
+#para este problema usamos un metodo de monte carlo donde simulamos n samples de los datos
+#con valores de y random calculados desde una distribucion gaussiana con desviacion estandar 0.02*y
+incertidumbre = 0.02
+n = 10000
+
+integral_samples = []
+
+#calcular cada integral para cada sample usando simps y agregarlos a una lista
+for _ in range(n):
+    ruido = y_data_filtered + np.random.normal(0, incertidumbre * y_data_filtered)  # agregando ruido
+    integral = simps(ruido, x_data)  
+    integral_samples.append(integral)
+
+#define los resultados de las integrals calculando el promedio de los samples 
+#y luego la desviacion estandar para la incertidumbre
+integral_samples = np.array(integral_samples)
+prom_integral = np.mean(integral_samples)
+incert_integral = np.std(integral_samples)
+
+print("Integral:", round(prom_integral, 3), "\u00B1", round(incert_integral,3), "W/m\u00b2")

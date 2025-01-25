@@ -6,11 +6,14 @@ from scipy.signal import medfilt
 import pandas as pd
 import re
 
+#parte 2a
 def procesar_linea(linea):
     numeros = re.findall(r'-?\d+\.?\d*', linea)
     return [float(n) for n in numeros]
 
 datos = []
+
+#procesando la info
 with open('hysteresis.dat', 'r') as archivo:
     for linea in archivo:
         procesado = procesar_linea(linea.strip())
@@ -23,6 +26,7 @@ for i in range(len(data['H'])):
     if data['H'][i] > 1:
         data.at[i, 'H'] = data['H'][i] / 1000
 
+#graficando la primera 
 plt.figure(figsize=(10, 6))
 plt.plot(data['t'], data['H'], marker='o', linestyle='-', label='H vs t', color='blue')
 plt.plot(data['t'], data['B'], marker='o', linestyle='None', label='B vs t', color='red')
@@ -34,6 +38,11 @@ plt.grid()
 
 plt.savefig('histérico.pdf')
 
+#2b
+
+print("La transformada de fourier ")
+
+#2c
 t = data['t']  
 B = data['B'] * 1e-3
 H = data['H']
