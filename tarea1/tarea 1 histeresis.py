@@ -56,14 +56,14 @@ espectro_positivo = 2.0 / len(B) * np.abs(espectro[frecuencias > 0])
 
 #encontrando la mayor frecuencia positiva
 frecuencia_dominante = frecuencias_positivas[np.argmax(espectro_positivo)]
-print(f"La frecuencia dominante es {frecuencia_dominante:.4f} Hz")
+print(f" 2.b) La frecuencia dominante es {frecuencia_dominante:.4f} Hz")
 
 print("Se utilizó una transformada de fourier discreta para pasar los datos de B de un espacio de tiempo a un espacio de frecuencias y despues se encontró la frecuencia positiva mayor")
 
 #2c
 
 energia_perdida = np.trapezoid(H, B)
-print(f"La energía perdida por unidad de volumen es {energia_perdida:.4e} J/m³")
+print(f"2.c) La energía perdida por unidad de volumen es {energia_perdida:.4e} J/m³")
 
 plt.figure(figsize=(10, 6))
 plt.plot(B, H, marker='o', linestyle='-', label='Ciclo de Histéresis')

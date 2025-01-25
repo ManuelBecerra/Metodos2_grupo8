@@ -43,6 +43,10 @@ print(f"1.a) Número de datos eliminados : {filtered_data(data)[1]}")
 
 print("1.b) Método: ")
 
+#1.c
+
+print("1.c) ")
+
 #1.d
 #para este problema usamos un metodo de monte carlo donde simulamos n samples de los datos
 #con valores de y random calculados desde una distribucion gaussiana con desviacion estandar 0.02*y
@@ -63,4 +67,4 @@ integral_samples = np.array(integral_samples)
 prom_integral = np.mean(integral_samples)
 incert_integral = np.std(integral_samples)
 
-print("Integral:", round(prom_integral, 3), "\u00B1", round(incert_integral,3), "W/m\u00b2")
+print("1.d) Integral:", round(prom_integral, 3), "\u00B1", round(incert_integral,3), "W/m\u00b2")
