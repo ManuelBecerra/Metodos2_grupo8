@@ -40,23 +40,27 @@ plt.savefig('histérico.pdf')
 
 #2b
 
-print("La transformada de fourier ")
-
-#2c
 t = data['t']  
 B = data['B'] * 1e-3
 H = data['H']
 
 delta_t = np.mean(np.diff(t))  
 
+#transformada de fourier
 frecuencias = np.fft.fftfreq(len(B), d=delta_t) 
 espectro = np.fft.fft(B)  
 
+#determinando las frecuencias positivas y el espectro entero
 frecuencias_positivas = frecuencias[frecuencias > 0]
 espectro_positivo = 2.0 / len(B) * np.abs(espectro[frecuencias > 0])
 
+#encontrando la mayor frecuencia positiva
 frecuencia_dominante = frecuencias_positivas[np.argmax(espectro_positivo)]
 print(f"La frecuencia dominante es {frecuencia_dominante:.4f} Hz")
+
+print("Se utilizó una transformada de fourier discreta para pasar los datos de B de un espacio de tiempo a un espacio de frecuencias y despues se encontró la frecuencia positiva mayor")
+
+#2c
 
 energia_perdida = np.trapezoid(H, B)
 print(f"La energía perdida por unidad de volumen es {energia_perdida:.4e} J/m³")
