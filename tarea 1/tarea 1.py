@@ -43,7 +43,7 @@ print(f"1.a) Número de datos eliminados : {filtered_data(data)[1]}")
 
 print("1.b) Método: ")
 
-#1.c
+#1.d
 #para este problema usamos un metodo de monte carlo donde simulamos n samples de los datos
 #con valores de y random calculados desde una distribucion gaussiana con desviacion estandar 0.02*y
 incertidumbre = 0.02
