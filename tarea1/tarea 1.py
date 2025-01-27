@@ -10,7 +10,9 @@ from scipy.integrate import simps
 
 
 '''1a'''
-data = pd.read_csv("Rhodium.csv")
+#Para limpiar los datos corruptos se hizo un filtro de mediana (mefilt) el cual calcula la medianta de una ventana de tamaño 5, es decir que compara los dos vecinos de ambos lados.
+#Si los datos difieren notoriamente se reemplazan por la mediana
+data = pd.read_csv("tarea1/Rhodium.csv")
 x_data = data['Wavelength (pm)']
 y_data = data['Intensity (mJy)']
 
@@ -33,7 +35,7 @@ plt.legend()
 plt.tight_layout()
 
 
-output_path = "limpieza.pdf"
+output_path = "tarea1/limpieza.pdf"
 plt.savefig(output_path)
 
 print(f"1.a) Número de datos eliminados : {filtered_data(data)[1]}")
