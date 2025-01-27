@@ -14,7 +14,7 @@ def procesar_linea(linea):
 datos = []
 
 #procesando la info
-with open('hysteresis.dat', 'r') as archivo:
+with open('tarea1/hysteresis.dat', 'r') as archivo:
     for linea in archivo:
         procesado = procesar_linea(linea.strip())
         if len(procesado) == 3:  
