@@ -42,13 +42,17 @@ plt.savefig(output_path)
 print(f"1.a) Número de datos eliminados : {filtered_data(data)[1]}")
 
 '''1b'''
+#Se crea un DataFrame con los datos filtrados
 new_data = pd.DataFrame({'Wavelength (pm)': x_data, 'Intensity (mJy)': y_data_filtered})
 
+#Se eliminan las filas de dtos de los picos de rayos x
 new_data.drop(range(260,429), axis=0, inplace=True)
 
+#Se obtienen los datos justo antes y después de los datos eliminados de los picos de rayos x
 x = np.array([72.8857 , 114.0033])
 y = np.array([0.1116 , 0.0547])
 
+#Se realiza una regresión lineal entre los datos anteriormente tomados para obtener el mismo numero de datos que el DataFrame original filtrado.
 slope, intercept, r_value, p_value, std_err = linregress(x, y)
 
 def lineal_regression(x):
@@ -57,29 +61,69 @@ def lineal_regression(x):
 x_reg = np.linspace(72.8857, 114.0033, 169)
 y_reg = lineal_regression(x_reg)
 
+#Se crea un DataFrame con los datos del espectro de fondo más los datos de la regresión lineal.
 data_reg = pd.DataFrame({'Wavelength (pm)': x_reg, 'Intensity (mJy)': y_reg})
 new_data_part1 = new_data.iloc[:260]
 new_data_part2 = new_data.iloc[260:]
 
 new_data = pd.concat([new_data_part1, data_reg, new_data_part2], ignore_index=True)
 
+#Se restan los datos del espectro de fondo con los datos filtrados para obtener una gráfica solamente con los picos de rayos x.
 y_data_peaks = y_data_filtered - new_data['Intensity (mJy)']
 plt.figure(2)
 plt.plot(x_data, y_data_peaks, color= 'lightpink')
 plt.xlabel('Wavelength (pm)')
 plt.ylabel('Intensity (mJy)')
 plt.title('Intensity vs Wavelength Peaks')
-plt.legend()
-plt.tight_layout()
+
 
 output_path = "tarea1/picos.pdf"
 plt.savefig(output_path)
 
-print("1.b) Método: ")
+print("1.b) Método: Spectrum substraction with lineal regression ")
 
 '''1c'''
+#Se crea un DataFrame con los datos de los picos de rayos x
+peaks_data = pd.DataFrame({'Wavelength (pm)': x_data, 'Intensity (mJy)': y_data_peaks})
+
+#Se halla el índice del menor dato para separar ambos picos de rayos x
+index = peaks_data[peaks_data["Intensity (mJy)"] == y_data_peaks.min()].index
+
+peak1 = peaks_data.iloc[:339]
+peak2 = peaks_data.iloc[339:].reset_index()
+
+y_peak1 = peak1['Intensity (mJy)']
+y_peak2 = peak2['Intensity (mJy)']
+
+#Se hallan los índices de los picos de rayos x y del espectro de fondo
+indx_max_peak1 = np.argmax(y_peak1)
+indx_max_peak2 = np.argmax(y_peak2)
+indx_max_peak_spectrum = np.argmax(new_data["Intensity (mJy)"])
+
+#Función para hallar la posición de los máximos
+def position_max(df, index):
+  return round(df['Wavelength (pm)'][index],5), round(df['Intensity (mJy)'][index],5)
+
+
+#Función para hallar el FWHM de cada pico de rayos x y del espectro de fondo
+def FWHM(df, index):
+  x = position_max(df, index)[0]
+  y = position_max(df, index)[1]
+  y_half = y/2
+  indx_left = np.where(df['Intensity (mJy)'][:index] <= y_half)[0]
+  indx_right = np.where(df['Intensity (mJy)'][index:] <= y_half)[0] + index
+  x_left = df['Wavelength (pm)'][indx_left[-1]]
+  x_right = df['Wavelength (pm)'][indx_right[0]]
+  return x_right - x_left
 
 print("1.c) ")
+print("Posición del pico del espectro de fondo: x =", round(position_max(new_data, indx_max_peak_spectrum)[0],2), "[pm], y =", position_max(new_data, indx_max_peak_spectrum)[1], "[mJy]")
+print("Posición del primer pico de rayos x: x =", round(position_max(peak1, indx_max_peak1)[0],2), "[pm], y =", position_max(peak1, indx_max_peak1)[1], "[mJy]")
+print("Posición del segundo pico de rayos x: x =", round(position_max(peak2, indx_max_peak2)[0],1), "[pm], y =", round(position_max(peak2, indx_max_peak2)[1],4), "[mJy]")
+
+print("El FWHM del espectro de fondo es:", "{:.4g}".format(FWHM(new_data, indx_max_peak_spectrum)), "[pm]")
+print("El FWHM del primer pico de rayos X es:", "{:.4g}".format(FWHM(peak1, indx_max_peak1)), "[pm]")
+print("El FWHM del segundo pico de rayos X es:", "{:.4g}".format(FWHM(peak2, indx_max_peak2)), "[pm]")
 
 '''1d'''
 #para este problema usamos un metodo de monte carlo donde simulamos n samples de los datos
@@ -89,7 +133,7 @@ n = 10000
 
 integral_samples = []
 
-#calcular cada integral para cada sample usando simps y agregarlos a una lista
+#calcular cada integral para cada sample usando simpson y agregarlos a una lista
 for _ in range(n):
     ruido = y_data_filtered + np.random.normal(0, incertidumbre * y_data_filtered)  # agregando ruido
     integral = simpson(ruido, x_data)  
@@ -137,7 +181,7 @@ plt.ylabel('Valores de H y B')
 plt.legend()
 plt.grid()
 
-plt.savefig('histérico.pdf')
+plt.savefig('tarea1/histérico.pdf')
 
 '''2b'''
 
@@ -174,4 +218,4 @@ plt.ylabel('H (A/m)')
 plt.grid()
 plt.legend()
 
-plt.savefig('energy.pdf')
+plt.savefig('tarea1/energy.pdf')
