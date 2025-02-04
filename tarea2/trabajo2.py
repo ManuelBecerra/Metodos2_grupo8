@@ -2,6 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 
+'''Ejercicio 1'''
+
+'''1a.'''
 # Función para generar datos de prueba
 def datos_prueba(t_max: float, dt: float, amplitudes: NDArray[float],
                   frecuencias: NDArray[float], ruido: float = 0.0) -> tuple[NDArray[float], NDArray[float]]:
@@ -23,7 +26,7 @@ t_max = 1.0
 dt = 0.001
 amplitudes = np.array([1.0, 0.5, 0.3])
 frecuencias = np.array([5.0, 15.0, 30.0])
-ruido = 10
+ruido = 1
 
 # Señales con y sin ruido
 t, y_sin_ruido = datos_prueba(t_max, dt, amplitudes, frecuencias, ruido=0.0)
@@ -37,8 +40,7 @@ transformada_sin_ruido = np.abs(Fourier_multiple(t, y_sin_ruido, frecuencias_ana
 transformada_con_ruido = np.abs(Fourier_multiple(t, y_con_ruido, frecuencias_analisis))
 
 # Gráficas
-plt.figure(figsize=(12, 6))
-
+plt.figure(1,figsize=(12, 6))
 plt.subplot(1, 2, 1)
 plt.plot(frecuencias_analisis, transformada_sin_ruido, label="Sin ruido")
 plt.title("Transformada de Fourier (sin ruido)")
@@ -57,7 +59,24 @@ plt.legend()
 
 # Guardar gráfico en PDF
 plt.savefig("1.a.pdf")
-plt.show()
+#plt.show()
 
 # Respuesta a la pregunta sobre el efecto del ruido
-print("1.a) El ruido enmascara los picos de las frecuencias fundamentales.")
+print("1.a) El ruido disminuye la amplitud de la frecuencia fundamental.")
+
+'''1b.'''
+amplitud = ([5])
+frecuencia = ([20.0])
+# Señales con y sin ruido
+t, y_sin_ruido = datos_prueba(t_max, dt, amplitud, frecuencia)
+
+# Cálculo de las transformadas
+transformada_sin_ruido_2 = np.abs(Fourier_multiple(t, y_sin_ruido, frecuencias_analisis))
+plt.figure(2, figsize=(6, 6))
+plt.plot(frecuencias_analisis, transformada_sin_ruido_2, label="Sin ruido")
+plt.title("Transformada de Fourier (sin ruido)")
+plt.xlabel("Frecuencia (Hz)")
+plt.ylabel("Magnitud")
+plt.grid(True)
+plt.legend()
+plt.show()
