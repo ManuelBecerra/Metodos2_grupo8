@@ -23,7 +23,7 @@ t_max = 1.0
 dt = 0.001
 amplitudes = np.array([1.0, 0.5, 0.3])
 frecuencias = np.array([5.0, 15.0, 30.0])
-ruido = 0.5
+ruido = 10
 
 # Señales con y sin ruido
 t, y_sin_ruido = datos_prueba(t_max, dt, amplitudes, frecuencias, ruido=0.0)
