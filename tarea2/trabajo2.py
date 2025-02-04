@@ -65,18 +65,44 @@ plt.savefig("1.a.pdf")
 print("1.a) El ruido disminuye la amplitud de la frecuencia fundamental.")
 
 '''1b.'''
-amplitud = ([5])
-frecuencia = ([20.0])
-# Señales con y sin ruido
-t, y_sin_ruido = datos_prueba(t_max, dt, amplitud, frecuencia)
+# Parámetros
+amplitud = np.array([5])
+frecuencia = np.array([20.0])
+dt = 0.01
 
-# Cálculo de las transformadas
-transformada_sin_ruido_2 = np.abs(Fourier_multiple(t, y_sin_ruido, frecuencias_analisis))
-plt.figure(2, figsize=(6, 6))
-plt.plot(frecuencias_analisis, transformada_sin_ruido_2, label="Sin ruido")
-plt.title("Transformada de Fourier (sin ruido)")
-plt.xlabel("Frecuencia (Hz)")
-plt.ylabel("Magnitud")
-plt.grid(True)
+# Valores de t_max a analizar
+t_max_values = np.linspace(10, 300, 10)
+fwhm_values = []
+
+# Análisis para distintos t_max
+for t_max in t_max_values:
+    t, y_sin_ruido = datos_prueba(t_max, dt, amplitud, frecuencia)
+    frecuencias_analisis = np.fft.fftfreq(len(t), d=dt)
+    transformada_sin_ruido = np.abs(Fourier_multiple(t, y_sin_ruido, frecuencias_analisis))
+    
+    # Encontrar el ancho a media altura (FWHM) sin usar scipy.signal
+    max_index = np.argmax(transformada_sin_ruido)
+    half_max = transformada_sin_ruido[max_index] / 2
+    
+    left_idx = np.where(transformada_sin_ruido[:max_index] <= half_max)[0]
+    right_idx = np.where(transformada_sin_ruido[max_index:] <= half_max)[0]
+    
+    if len(left_idx) > 0 and len(right_idx) > 0:
+        left_idx = left_idx[-1]
+        right_idx = max_index + right_idx[0]
+        fwhm = frecuencias_analisis[right_idx] - frecuencias_analisis[left_idx]
+    else:
+        fwhm = np.nan
+    
+    fwhm_values.append(fwhm)
+
+# Graficar FWHM vs t_max en escala log-log
+plt.figure(figsize=(6,6))
+plt.loglog(t_max_values, fwhm_values, 'o-', label="FWHM")
+plt.xlabel("t_max (s)")
+plt.ylabel("FWHM (Hz)")
+plt.title("Ancho a media altura vs t_max")
+plt.grid(True, which="both", linestyle="--")
 plt.legend()
+plt.savefig("1.b.pdf")
 plt.show()
