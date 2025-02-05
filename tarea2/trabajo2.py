@@ -61,10 +61,8 @@ plt.grid(True)
 plt.legend()
 
 # Guardar gráfico en PDF
-plt.savefig("1.a.pdf")
-#plt.show()
+plt.savefig("tarea2/1.a.pdf")
 
-print('1.a ')
 
 '''1b.'''
 # Generar señales de prueba
@@ -97,7 +95,6 @@ plt.ylabel("FWHM del pico [Hz]")
 plt.title("Relación entre FWHM y duración de la señal")
 plt.grid(True, which="both", linestyle="--", linewidth=0.5)
 plt.legend()
-plt.savefig("1.b.pdf")
-plt.show()
+plt.savefig("tarea2/1.b.pdf")
 
 print("1.b: La relación entre FWHM y t_max sigue una tendencia aproximadamente proporcional a 1/t_max.")
