@@ -17,9 +17,11 @@ def datos_prueba(t_max: float, dt: float, amplitudes: NDArray[float], # type: ig
 
 '''1a.'''
 # Implementación de la transformada de Fourier
+from numba import njit
+@njit
 def Fourier_multiple(t: NDArray[float], y: NDArray[float], f: NDArray[float]) -> NDArray[complex]:
     N = len(t)
-    resultados = np.zeros(len(f), dtype=complex)
+    resultados = np.zeros(len(f))+0.0j
     for i, freq in enumerate(f):
         exp_term = np.exp(-2j * np.pi * t * freq)
         resultados[i] = np.sum(y * exp_term) / N
@@ -68,15 +70,16 @@ plt.savefig("tarea2/1.a.pdf")
 # Generar señales de prueba
 amplitudesb = np.array([1.0])
 frecuenciasb = np.array([10.0])
-dtb = 0.001
+dtb = 0.005
 
 # Definir rango de tiempos y frecuencias
 t_max_values = np.linspace(10, 300, 10)  
-frecuencias_eval = np.linspace(0, 50, 500)
+frecuencias_eval = np.linspace(5, 15, 5000)
 
 fwhm_values = []
 
-for t_max in t_max_values:
+from tqdm import tqdm
+for t_max in tqdm(t_max_values):
     t, y = datos_prueba(t_max, dtb, amplitudesb, frecuenciasb)
     transformada = Fourier_multiple(t, y, frecuencias_eval)
 
