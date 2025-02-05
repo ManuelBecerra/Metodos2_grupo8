@@ -45,7 +45,7 @@ transformada_con_ruido = np.abs(Fourier_multiple(t, y_con_ruido, frecuencias_ana
 # Gráficas
 plt.figure(1,figsize=(12, 6))
 plt.subplot(1, 2, 1)
-plt.plot(frecuencias_analisis, transformada_sin_ruido, label="Sin ruido")
+plt.plot(frecuencias_analisis, transformada_sin_ruido, label="Sin ruido", color = 'orange')
 plt.title("Transformada de Fourier (sin ruido)")
 plt.xlabel("Frecuencia (Hz)")
 plt.ylabel("Magnitud")
@@ -53,7 +53,7 @@ plt.grid(True)
 plt.legend()
 
 plt.subplot(1, 2, 2)
-plt.plot(frecuencias_analisis, transformada_con_ruido, label="Con ruido", color='orange')
+plt.plot(frecuencias_analisis, transformada_con_ruido, label="Con ruido", color='yellowgreen')
 plt.title("Transformada de Fourier (con ruido)")
 plt.xlabel("Frecuencia (Hz)")
 plt.ylabel("Magnitud")
@@ -91,7 +91,7 @@ for t_max in t_max_values:
 
 # Graficar el FWHM en escala log-log
 plt.figure(figsize=(10, 6))
-plt.loglog(t_max_values, fwhm_values, marker="o", label="FWHM del pico")
+plt.loglog(t_max_values, fwhm_values, marker="o", label="FWHM del pico", color= 'magenta')
 plt.xlabel("Duración de la señal (t_max) [s]")
 plt.ylabel("FWHM del pico [Hz]")
 plt.title("Relación entre FWHM y duración de la señal")
@@ -100,5 +100,4 @@ plt.legend()
 plt.savefig("1.b.pdf")
 plt.show()
 
-print(t_max_values, fwhm_values)
 print("1.b: La relación entre FWHM y t_max sigue una tendencia aproximadamente proporcional a 1/t_max.")
