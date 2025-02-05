@@ -1,13 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.typing import NDArray
+from scipy.signal import peak_widths
 
 '''Ejercicio 1'''
 
-'''1a.'''
 # Función para generar datos de prueba
-def datos_prueba(t_max: float, dt: float, amplitudes: NDArray[float],
-                  frecuencias: NDArray[float], ruido: float = 0.0) -> tuple[NDArray[float], NDArray[float]]:
+def datos_prueba(t_max: float, dt: float, amplitudes: NDArray[float], # type: ignore
+                  frecuencias: NDArray[float], ruido: float = 0.0) -> tuple[NDArray[float], NDArray[float]]: # type: ignore
     ts = np.arange(0., t_max, dt)
     ys = np.zeros_like(ts, dtype=float)
     for A, f in zip(amplitudes, frecuencias):
@@ -15,18 +15,21 @@ def datos_prueba(t_max: float, dt: float, amplitudes: NDArray[float],
     ys += np.random.normal(loc=0, size=len(ys), scale=ruido) if ruido else 0
     return ts, ys
 
+'''1a.'''
 # Implementación de la transformada de Fourier
 def Fourier_multiple(t: NDArray[float], y: NDArray[float], f: NDArray[float]) -> NDArray[complex]:
-    t = t[:, np.newaxis]  # Expande t para hacer operaciones vectorizadas
-    exponentes = np.exp(-2j * np.pi * f * t)  # Exponentes vectorizados
-    return np.dot(y, exponentes) / len(t)  # Transformada discreta de Fourier
-
+    N = len(t)
+    resultados = np.zeros(len(f), dtype=complex)
+    for i, freq in enumerate(f):
+        exp_term = np.exp(-2j * np.pi * t * freq)
+        resultados[i] = np.sum(y * exp_term) / N
+    return resultados
 # Generación de señales
 t_max = 1.0
 dt = 0.001
 amplitudes = np.array([1.0, 0.5, 0.3])
 frecuencias = np.array([5.0, 15.0, 30.0])
-ruido = 1
+ruido = 0.5
 
 # Señales con y sin ruido
 t, y_sin_ruido = datos_prueba(t_max, dt, amplitudes, frecuencias, ruido=0.0)
@@ -61,48 +64,41 @@ plt.legend()
 plt.savefig("1.a.pdf")
 #plt.show()
 
-# Respuesta a la pregunta sobre el efecto del ruido
-print("1.a) El ruido disminuye la amplitud de la frecuencia fundamental.")
+print('1.a ')
 
 '''1b.'''
-# Parámetros
-amplitud = np.array([5])
-frecuencia = np.array([20.0])
-dt = 0.01
+# Generar señales de prueba
+amplitudesb = np.array([1.0])
+frecuenciasb = np.array([10.0])
+dtb = 0.001
 
-# Valores de t_max a analizar
-t_max_values = np.linspace(10, 300, 10)
+# Definir rango de tiempos y frecuencias
+t_max_values = np.linspace(10, 300, 10)  
+frecuencias_eval = np.linspace(0, 50, 500)
+
 fwhm_values = []
 
-# Análisis para distintos t_max
 for t_max in t_max_values:
-    t, y_sin_ruido = datos_prueba(t_max, dt, amplitud, frecuencia)
-    frecuencias_analisis = np.fft.fftfreq(len(t), d=dt)
-    transformada_sin_ruido = np.abs(Fourier_multiple(t, y_sin_ruido, frecuencias_analisis))
-    
-    # Encontrar el ancho a media altura (FWHM) sin usar scipy.signal
-    max_index = np.argmax(transformada_sin_ruido)
-    half_max = transformada_sin_ruido[max_index] / 2
-    
-    left_idx = np.where(transformada_sin_ruido[:max_index] <= half_max)[0]
-    right_idx = np.where(transformada_sin_ruido[max_index:] <= half_max)[0]
-    
-    if len(left_idx) > 0 and len(right_idx) > 0:
-        left_idx = left_idx[-1]
-        right_idx = max_index + right_idx[0]
-        fwhm = frecuencias_analisis[right_idx] - frecuencias_analisis[left_idx]
-    else:
-        fwhm = np.nan
-    
-    fwhm_values.append(fwhm)
+    t, y = datos_prueba(t_max, dtb, amplitudesb, frecuenciasb)
+    transformada = Fourier_multiple(t, y, frecuencias_eval)
 
-# Graficar FWHM vs t_max en escala log-log
-plt.figure(figsize=(6,6))
-plt.loglog(t_max_values, fwhm_values, 'o-', label="FWHM")
-plt.xlabel("t_max (s)")
-plt.ylabel("FWHM (Hz)")
-plt.title("Ancho a media altura vs t_max")
-plt.grid(True, which="both", linestyle="--")
+    # Calcular el FWHM del pico
+    amplitud_transformada = np.abs(transformada)
+    pico_indice = np.argmax(amplitud_transformada)
+    resultados_fwhm = peak_widths(amplitud_transformada, [pico_indice], rel_height=0.5)
+    ancho = resultados_fwhm[0][0] * (frecuencias_eval[1] - frecuencias_eval[0])
+    fwhm_values.append(ancho)
+
+# Graficar el FWHM en escala log-log
+plt.figure(figsize=(10, 6))
+plt.loglog(t_max_values, fwhm_values, marker="o", label="FWHM del pico")
+plt.xlabel("Duración de la señal (t_max) [s]")
+plt.ylabel("FWHM del pico [Hz]")
+plt.title("Relación entre FWHM y duración de la señal")
+plt.grid(True, which="both", linestyle="--", linewidth=0.5)
 plt.legend()
 plt.savefig("1.b.pdf")
 plt.show()
+
+print(t_max_values, fwhm_values)
+print("1.b: La relación entre FWHM y t_max sigue una tendencia aproximadamente proporcional a 1/t_max.")
