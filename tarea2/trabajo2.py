@@ -16,9 +16,9 @@ def datos_prueba(t_max: float, dt: float, amplitudes: NDArray[float], # type: ig
     return ts, ys
 
 '''1a.'''
-# Implementación de la transformada de Fourier
 from numba import njit
 @njit
+# Implementación de la transformada de Fourier
 def Fourier_multiple(t: NDArray[float], y: NDArray[float], f: NDArray[float]) -> NDArray[complex]:
     N = len(t)
     resultados = np.zeros(len(f))+0.0j
@@ -101,3 +101,52 @@ plt.legend()
 plt.savefig("tarea2/1.b.pdf")
 
 print("1.b: La relación entre FWHM y t_max sigue una tendencia aproximadamente proporcional a 1/t_max.")
+
+'''1c.'''
+# Cargar datos del archivo experimental
+file_path = 'tarea2/OGLE-LMC-CEP-0001.dat'
+data = np.loadtxt(file_path)
+t, y, sigma_y = data[:, 0], data[:, 1], data[:, 2]
+
+# Histograma de diferencias temporales
+dt_dif = np.diff(t)
+plt.figure(figsize=(10, 6))
+plt.hist(dt_dif, bins=50, alpha=0.7, color='c', edgecolor='k')
+plt.xlabel("Intervalos de tiempo [días]")
+plt.ylabel("Frecuencia")
+plt.title("Histograma de diferencias temporales")
+plt.grid(True, linestyle="--", linewidth=0.5)
+#plt.show()
+# Transformada de Fourier con señal centrada en promedio cero
+y_centrada = y - np.mean(y)
+frecuencias_eval = np.linspace(0, 8, 10000)  # Rango 0 a 8 ciclos/día con alta densidad
+transformada = Fourier_multiple(t, y_centrada, frecuencias_eval)
+amplitud_transformada = np.abs(transformada)
+
+# Gráfico transformada
+plt.figure(figsize=(12, 6))
+plt.plot(frecuencias_eval, amplitud_transformada, label="Transformada de Fourier")
+plt.xlabel("Frecuencia [ciclos/día]")
+plt.ylabel("Amplitud")
+plt.title("Transformada de Fourier)")
+plt.grid(True, linestyle="--", linewidth=0.5)
+plt.legend()
+#plt.show()
+
+# Encontrar la frecuencia dominante (f_true)
+pico_indice = np.argmax(amplitud_transformada)
+f_true = frecuencias_eval[pico_indice]
+print(f"1.c) f true: {f_true:.3f} ciclos/día")
+
+# Cálculo de la fase y graficación
+fase = np.mod(f_true * t, 1)
+
+plt.figure(figsize=(10, 6))
+plt.scatter(fase, y_centrada)
+plt.xlabel("Fase (mod(f_true * t, 1))")
+plt.ylabel("Intensidad (y)")
+plt.title("Datos en función de la fase")
+plt.grid(True, linestyle="--", linewidth=0.5)
+plt.legend()
+plt.savefig('tarea2/1.c.pdf')
+
