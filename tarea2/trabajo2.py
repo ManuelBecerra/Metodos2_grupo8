@@ -117,9 +117,10 @@ plt.ylabel("Frecuencia")
 plt.title("Histograma de diferencias temporales")
 plt.grid(True, linestyle="--", linewidth=0.5)
 #plt.show()
+
 # Transformada de Fourier con señal centrada en promedio cero
 y_centrada = y - np.mean(y)
-frecuencias_eval = np.linspace(0, 8, 10000)  # Rango 0 a 8 ciclos/día con alta densidad
+frecuencias_eval = np.linspace(0, 16, 20000)  # Rango 0 a 8 ciclos/día con alta densidad
 transformada = Fourier_multiple(t, y_centrada, frecuencias_eval)
 amplitud_transformada = np.abs(transformada)
 
@@ -133,10 +134,25 @@ plt.grid(True, linestyle="--", linewidth=0.5)
 plt.legend()
 #plt.show()
 
+dt_medio = np.median(np.diff(t))
+f_nyquist = 1 / (2 * dt_medio)
+print(f"1.c) f Nyquist: {f_nyquist:.3f} ciclos/día")
+
 # Encontrar la frecuencia dominante (f_true)
 pico_indice = np.argmax(amplitud_transformada)
 f_true = frecuencias_eval[pico_indice]
 print(f"1.c) f true: {f_true:.3f} ciclos/día")
+
+plt.figure(figsize=(12, 6))
+plt.plot(frecuencias_eval, amplitud_transformada, label="Transformada de Fourier", color='b')
+plt.axvline(f_nyquist, color='r', linestyle='--', label=f"f Nyquist: {f_nyquist:.3f}")
+plt.axvline(f_true, color='g', linestyle='--', label=f"f True: {f_true:.3f}")
+plt.xlabel("Frecuencia [ciclos/día]")
+plt.ylabel("Amplitud")
+plt.title("Transformada de Fourier con frecuencias destacadas")
+plt.grid(True, linestyle="--", linewidth=0.5)
+plt.legend()
+plt.show()
 
 # Cálculo de la fase y graficación
 fase = np.mod(f_true * t, 1)
