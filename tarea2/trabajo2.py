@@ -152,7 +152,7 @@ plt.ylabel("Amplitud")
 plt.title("Transformada de Fourier con frecuencias destacadas")
 plt.grid(True, linestyle="--", linewidth=0.5)
 plt.legend()
-plt.show()
+#plt.show()
 
 # Cálculo de la fase y graficación
 fase = np.mod(f_true * t, 1)
