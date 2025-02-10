@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from numpy.typing import NDArray
 from scipy.signal import peak_widths
 import pandas as pd
+
 '''Ejercicio 1'''
 
 # Función para generar datos de prueba
@@ -185,8 +186,8 @@ plt.savefig('tarea2/1.c.pdf')
 '''2a.'''
 data = pd.read_csv("tarea2/H_field.csv", usecols=['t', 'H'])
 
-t = data['t']
-H = data['H']
+t = data['t'].values
+H = data['H'].values
 
 delta_t = np.mean(np.diff(t))
 
@@ -200,7 +201,15 @@ espectro_positivo = 2.0 / len(H) * np.abs(espectro[:len(frecuencias)][frecuencia
 
 #calculando las frecuencias 
 f_fast = frecuencias_positivas[np.argmax(espectro_positivo)]
-f_general = 0.4873
+
+frecuencias2a =np.linspace(0, frecuencias[-1], 1000)
+transf_general = Fourier_multiple(t, H, frecuencias2a)
+transf_general *= 2.0 / len(H)
+amplitud_transformada2a = np.abs(transf_general)
+pico_indice2a = np.argmax(amplitud_transformada2a)
+f_general = frecuencias2a[pico_indice2a]
+
+
 print(f"2.a) {f_fast = :.5f}; {f_general = :.5f}")
 
 #calcular las fases
@@ -296,3 +305,142 @@ plt.xticks(rotation=45)
 plt.savefig("tarea2/2.b.pdf")
 
 '''Ejercicio 3'''
+
+'''3a.'''
+
+#descargar info y skip la primera linea porque esta mal
+df = pd.read_csv("tarea2/data_dates.txt", sep='\s+', skiprows=1)
+
+#concentrar la informacion de fechas a una sola columba
+df["date"] = pd.to_datetime(df[['Year', 'Month', 'Day']])
+
+#quitar la informacion del último mes de 2017 ya que no contiene datos de SSN
+cutoff = pd.to_datetime("2017-07-01")
+df = df[df["date"] < cutoff]
+df.drop(columns=['Year', 'Month', 'Day'], inplace=True)
+
+#Obtener y utilizar solamente los datos de SSN
+signal = df.iloc[:, 0].values
+N = len(signal)
+t = np.arange(N)
+
+# Transformada de Fourier y frecuencias
+dft_signal = np.fft.fft(signal)
+freqs = np.fft.fftfreq(N)
+
+# Diferentes valores de alfa para el filtro
+alphas = [1, 10, 100]
+
+fig, axes = plt.subplots(len(alphas), 2, figsize=(10, 8))
+
+for i, alpha in enumerate(alphas):
+    # Filtro gaussiano
+    gaussian_filter = np.exp(- (freqs * alpha) ** 2)
+    filtered_signal = np.fft.ifft(dft_signal * gaussian_filter).real
+
+    # Graficar señal original y filtrada
+    axes[i, 0].plot(t, signal, label='Original')
+    axes[i, 0].plot(t, filtered_signal, label=f'Filtrada (α={alpha})')
+    axes[i, 0].legend()
+    axes[i, 0].set_title(f'Señal - α={alpha}')
+
+    # Graficar transformada
+    axes[i, 1].plot(freqs, np.abs(dft_signal), label='Original')
+    axes[i, 1].plot(freqs, np.abs(dft_signal * gaussian_filter), label='Filtrada')
+    axes[i, 1].legend()
+    axes[i, 1].set_title(f'Transformada - α={alpha}')
+
+    # Indicar el valor de alpha
+    axes[i, 0].text(0.45 * N, max(signal) * 0.9, f'α={alpha}', fontsize=12)
+
+plt.tight_layout()
+plt.savefig("tarea2/3.1.pdf")
+
+'''3b.'''
+
+from PIL import Image
+'''Figura castillo'''
+#Se abre la imagen y se saca la matriz de la imagen
+castle_im = Image.open("tarea2/Noisy_Smithsonian_Castle.jpg")
+castle_mat = np.array(castle_im)
+
+#Se hace la transformada de fourier en 2d de la imagen y se le hace shift para
+#que quede centralizada
+castle_FFT = np.fft.fftshift(np.fft.fft2(castle_mat))
+
+#Se elimina el ruido horizontal, el cual se ve principalmente en la vertical
+#centralizada de la imagen de frecuencias
+castle_FFT[380:384,412] = 0
+castle_FFT[406:409,412] = 0
+castle_FFT[432,412] = 0
+castle_FFT[356:359,412] = 0
+castle_FFT[332,412] = 0
+castle_FFT[0:358,511:513] = 0
+castle_FFT[407:765,511:513] = 0
+castle_FFT[382,612] = 0
+castle_FFT[406:409,612] = 0
+castle_FFT[432,612] = 0
+castle_FFT[356:359,612] = 0
+castle_FFT[332,612] = 0
+
+#Se realiza el proceso inverso de transformadas para volver a la imagen original
+#corregida
+castle_im_new = np.fft.ifft2(np.fft.ifftshift(castle_FFT)).real
+
+#Visualización de la FFT de la imagen
+#plt.figure(figsize=[10,15])
+#plt.imshow(abs(castle_FFT), norm="log")
+
+plt.figure()
+plt.matshow(castle_im_new, cmap="gray")
+plt.savefig("tarea2/3.b.a.png")
+
+'''Figura gato'''
+cat_im = Image.open("tarea2/catto.png")
+cat_mat = np.array(cat_im)
+
+cat_FFT = np.fft.fftshift(np.fft.fft2(cat_mat))
+for i in [-1,0,1]:
+  cat_FFT[i+391,350:373] = 0
+  cat_FFT[i+403,330:369] = 0
+  cat_FFT[i+415,320:365] = 0
+  cat_FFT[i+427,317:362] = 0
+  cat_FFT[i+439,312:357] = 0
+  cat_FFT[i+451:453,310:355] = 0
+  cat_FFT[i+463:465,305:350] = 0
+  cat_FFT[i+475:477,300:345] = 0
+  cat_FFT[i+488,298:343] = 0
+  cat_FFT[i+500,295:340] = 0
+  cat_FFT[i+512,294:339] = 0
+  cat_FFT[i+524,290:335] = 0
+  cat_FFT[i+536,286:331] = 0
+  cat_FFT[i+548,282:327] = 0
+  cat_FFT[i+560,278:323] = 0
+  cat_FFT[i+572,274:319] = 0
+
+  cat_FFT[i+367,378:401] = 0
+  cat_FFT[i+355,382:421] = 0
+  cat_FFT[i+343,386:431] = 0
+  cat_FFT[i+331,389:434] = 0
+  cat_FFT[i+319,394:439] = 0
+  cat_FFT[i+306:308,396:441] = 0
+  cat_FFT[i+294:296,401:446] = 0
+  cat_FFT[i+282:284,404:449] = 0
+  cat_FFT[i+270,406:451] = 0
+  cat_FFT[i+258,409:454] = 0
+  cat_FFT[i+246,411:456] = 0
+  cat_FFT[i+234,415:460] = 0
+  cat_FFT[i+222,419:464] = 0
+  cat_FFT[i+210,423:468] = 0
+  cat_FFT[i+198,427:472] = 0
+  cat_FFT[i+186,431:476] = 0
+
+cat_im_new = np.fft.ifft2(np.fft.ifftshift(cat_FFT)).real
+
+#Visualización de las FFT de la imagen
+#plt.figure(figsize=[10,10])
+#plt.imshow(abs(cat_FFT), norm="log")
+
+plt.figure()
+plt.matshow(cat_im_new, cmap="gray")
+plt.savefig("tarea2/3.b.b.png")
