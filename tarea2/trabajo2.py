@@ -126,7 +126,7 @@ t, y, sigma_y = data[:, 0], data[:, 1], data[:, 2]
 # Histograma de diferencias temporales
 dt_dif = np.diff(t)
 plt.figure(figsize=(10, 6))
-plt.hist(dt_dif, bins=50, alpha=0.7, color='c', edgecolor='k')
+plt.hist(dt_dif, bins=np.linspace(0,5,300), alpha=0.7, color='c', edgecolor='k')
 plt.xlabel("Intervalos de tiempo [días]")
 plt.ylabel("Frecuencia")
 plt.title("Histograma de diferencias temporales")
@@ -135,7 +135,7 @@ plt.grid(True, linestyle="--", linewidth=0.5)
 
 # Transformada de Fourier con señal centrada en promedio cero
 y_centrada = y - np.mean(y)
-frecuencias_eval = np.linspace(0, 16, 20000)  # Rango 0 a 8 ciclos/día con alta densidad
+frecuencias_eval = np.linspace(0, 8, 40000)  # Rango 0 a 8 ciclos/día con alta densidad
 transformada = Fourier_multiple(t, y_centrada, frecuencias_eval)
 amplitud_transformada = np.abs(transformada)
 
@@ -208,6 +208,7 @@ transf_general *= 2.0 / len(H)
 amplitud_transformada2a = np.abs(transf_general)
 pico_indice2a = np.argmax(amplitud_transformada2a)
 f_general = frecuencias2a[pico_indice2a]
+plt.figure()
 
 
 print(f"2.a) {f_fast = :.5f}; {f_general = :.5f}")
