@@ -321,8 +321,8 @@ plt.xticks(rotation=45)
 plt.grid()
 
 # Guardar la gráfica en 2.b.pdf
-plt.savefig("2.b.pdf")
-plt.show()
+plt.savefig("tarea2/2.b.pdf")
+
 
 '''Ejercicio 3'''
 
