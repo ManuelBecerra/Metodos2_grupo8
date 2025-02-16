@@ -274,36 +274,55 @@ print(f"2.b.a) P_solar = {P_solar:.2f}")
 
 '''2b.b'''
 
-#hacer la transformada inversa
-inversa_M = np.fft.irfft(spectrum, n=len(M)) 
 import datetime
 
-#definir el dia actual
+def fourier_inverse_manual(t, X_k, f_k, N):
+    """Reconstrucción manual de la transformada inversa de Fourier."""
+    reconstruccion = np.zeros_like(t, dtype=np.float64)
+    for k in range(len(f_k)):  # Iteramos sobre las frecuencias
+        reconstruccion += (2.0 / N) * np.real(X_k[k] * np.exp(2j * np.pi * f_k[k] * t))
+    return reconstruccion
+
+# Parámetros
+n = 50  # Número de armónicos a considerar
+N = len(M)  # Número total de datos
+
+# Filtrar los primeros M armónicos
+spectrum[n:] = 0  # Anulamos los armónicos superiores a M
+
+# Transformada inversa con los primeros M armónicos
+inversa_M = fourier_inverse_manual(t_numerico, spectrum, frequencies, N)
+
+# Definir el día actual
 today = pd.Timestamp(datetime.datetime.today())
 
-#extender los datos hasta mas de 2025
-extension = 365 * 13 
-extendido_t = pd.date_range(start=t2.min(), periods=len(M) + extension, freq='D')
-
-#calcular los valores corresponientes para los tiempos
-extendido_M = np.fft.irfft(spectrum, n=len(extendido_t))
-
-#convertir los dias extendidos a valores numericos
+# Extender los datos hasta más allá de 2025
+extension = 365 * 15  # Extender 15 años
+extendido_t = pd.date_range(start=df["date"].min(), periods=N + extension, freq='D')
 extendido_t_numerico = (extendido_t - extendido_t.min()).days
 
-#interpolar para predecir
+# Transformada inversa extendida
+extendido_M = fourier_inverse_manual(extendido_t_numerico, spectrum, frequencies, N)
+
+# Interpolación para predecir el número de manchas solares hoy
 n_manchas_hoy = np.interp(today.timestamp(), extendido_t_numerico, extendido_M)
 print(f'2.b.b) {n_manchas_hoy = :.1f}')
 
-#graficar
+# Graficar los datos observados y la predicción
 plt.figure(figsize=(10, 5))
-plt.plot(df['date'], df['SSN'], label="Observado", linestyle='-', marker='o', markersize=3, color='blue')
+plt.plot(df["date"], df["SSN"], label="Observado", linestyle='-', marker='o', markersize=3, color='blue')
 plt.plot(extendido_t, extendido_M, label="SSN Predecido (FFT)", linestyle='--', color='red')
+plt.axvline(today, color="black", linestyle=":", label="Hoy")
 plt.xlabel("Fecha")
-plt.ylabel("SSN)")
+plt.ylabel("Número de manchas solares (SSN)")
+plt.title("Predicción de manchas solares usando FFT")
 plt.legend()
 plt.xticks(rotation=45)
-plt.savefig("tarea2/2.b.pdf")
+plt.grid()
+
+# Guardar la gráfica en 2.b.pdf
+plt.savefig("2.b.pdf")
+plt.show()
 
 '''Ejercicio 3'''
 
