@@ -3,6 +3,74 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import matplotlib.cm as cm
 
+'''Ejercicio 1: Balística'''
+from numba import njit
+
+# Constants
+g = 9.773  # Gravity in m/s^2
+m = 10     # Mass in kg
+v0 = 10    # Initial speed in m/s
+b = np.log(2)/np.log(10)
+betas = np.logspace(-4, b, 100)  # Generate beta values in log scale
+betas[0] = 0.0
+@njit
+def trajectory(theta, beta, dt=0.01, max_time=10):
+    """Simulate the projectile motion with quadratic drag using Euler's method."""
+    vx, vy = v0 * np.cos(theta), v0 * np.sin(theta)
+    x, y = 0.0, 0.0
+    t = 0
+    energy_initial = 0.5 * m * v0**2 # Initial mechanical energy (Kinetic)
+    
+    while y >= 0 and t < max_time:
+        v = np.sqrt(vx**2 + vy**2)
+        ax = -beta * v**2 * vx / m
+        ay = (-m*g - (beta * v**2 * vy))/m
+        
+        vx += ax * dt
+        vy += ay * dt
+        x += vx * dt
+        y += vy * dt
+        t += dt
+    energy_final = 0.5 * m * (vx**2 + vy**2)  # Final mechanical energy (Kinetic, y_f = 0 also)
+    return x, energy_initial - energy_final  # Return range and energy loss
+
+@njit
+def find_optimal_angle(beta):
+    """Finds the launch angle that gives the maximum range for a given beta."""
+    best_angle = 0
+    max_range = 0
+    for theta in np.linspace(0, np.pi/2, 180):  # Search angles from 0 to 90 degrees
+        r, _ = trajectory(theta, beta)
+        if r > max_range:
+            max_range = r
+            best_angle = theta
+    return np.degrees(best_angle)
+
+# Compute optimal angles and energy loss
+theta_max_list = np.array([find_optimal_angle(beta) for beta in betas])
+energy_loss_list = np.array([trajectory(np.radians(theta_max_list[i]), beta)[1] for i, beta in enumerate(betas)])
+print(energy_loss_list[0])
+print(theta_max_list[0])
+
+# Plot θ_max vs β
+plt.figure(figsize=(8,6))
+plt.plot(betas, theta_max_list, marker='o', linestyle='-', color='b')
+plt.xscale('log')
+plt.xlabel(r'Coeficiente de fricción $\beta$')
+plt.ylabel(r'Ángulo máximo $\theta_{max}$ (degrees)')
+plt.title(r'$\theta_{max}$ vs $\beta$')
+plt.grid()
+plt.savefig("Tarea3/1.a.pdf")
+
+# Plot ΔE vs β
+plt.figure(figsize=(8,6))
+plt.plot(betas, energy_loss_list, marker='s', linestyle='-', color='r')
+plt.xscale('log')
+plt.xlabel(r'Coeficiente de fricción $\beta$')
+plt.ylabel(r'Energía perdida $\Delta E$ (J)')
+plt.title(r'Energía perdida $\Delta E$ vs $\beta$')
+plt.grid()
+plt.savefig("Tarea3/1.b.pdf")
 
 '''Ejercicio 4: Cuantización de la energía'''
 
