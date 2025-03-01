@@ -44,10 +44,20 @@ def find_optimal_angle(beta):
         if r > max_range:
             max_range = r
             best_angle = theta
-    return np.degrees(best_angle)
+    return np.degrees(best_angle), max_range
 
-# Compute optimal angles and energy loss
-theta_max_list = np.array([find_optimal_angle(beta) for beta in betas])
+# Compute optimal angles, maximum range, and energy loss
+theta_max_list = np.zeros_like(betas)
+range_max_list = np.zeros_like(betas)
+for i, beta in enumerate(betas):
+    theta_max_list[i], range_max_list[i] = find_optimal_angle(beta)
+max_r = 0
+max_t = 0
+for i, theta in enumerate(theta_max_list):
+    if range_max_list[i]>max_r:
+        max_r = range_max_list[i]
+        max_t = theta_max_list[i]
+print("1.a: El rango máximo es " + str(max_r) + "m, y su respectivo ángulo es: " + str(max_t) + " grados.")
 energy_loss_list = np.array([trajectory(np.radians(theta_max_list[i]), beta)[1] for i, beta in enumerate(betas)])
 print(energy_loss_list[0])
 print(theta_max_list[0])
