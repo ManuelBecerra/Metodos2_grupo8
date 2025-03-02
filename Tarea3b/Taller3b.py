@@ -172,11 +172,11 @@ def update(frame):
 
 # Crear animación
 frames = int(t_max / dt)
-ani = animation.FuncAnimation(fig, update, frames=frames, interval=dt*1000, blit=True)
+ani = animation.FuncAnimation(fig, update, frames=frames, interval=dt*1000, blit= False)
 
 Writer = animation.writers['ffmpeg']
 writer = Writer(fps=30, metadata=dict(artist='Bruno Abello'), bitrate=1800)
-ani.save("Tarea3b/2.mp4", writer=writer)
+ani.save("Tarea3b/4.mp4", writer=writer)
 
 # Mostrar animación
 #plt.show()
