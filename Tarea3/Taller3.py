@@ -2,85 +2,88 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import matplotlib.cm as cm
+from numba import njit
+import time 
 
 '''Ejercicio 1: Balística'''
-from numba import njit
-
-# Constants
-g = 9.773  # Gravity in m/s^2
-m = 10     # Mass in kg
-v0 = 10    # Initial speed in m/s
-b = np.log(2)/np.log(10)
-betas = np.logspace(-4, b, 100)  # Generate beta values in log scale
-betas[0] = 0.0
-@njit
-def trajectory(theta, beta, dt=0.01, max_time=10):
-    """Simulate the projectile motion with quadratic drag using Euler's method."""
-    vx, vy = v0 * np.cos(theta), v0 * np.sin(theta)
-    x, y = 0.0, 0.0
-    t = 0
-    energy_initial = 0.5 * m * v0**2 # Initial mechanical energy (Kinetic)
-    
-    while y >= 0 and t < max_time:
-        v = np.sqrt(vx**2 + vy**2)
-        ax = -beta * v**2 * vx / m
-        ay = (-m*g - (beta * v**2 * vy))/m
-        
-        vx += ax * dt
-        vy += ay * dt
-        x += vx * dt
-        y += vy * dt
-        t += dt
-    energy_final = 0.5 * m * (vx**2 + vy**2)  # Final mechanical energy (Kinetic, y_f = 0 also)
-    return x, energy_initial - energy_final  # Return range and energy loss
+ 
+start = time.time()
+# Constantes
+g = 9.773  # Gravedad en Bogotá (m/s^2)
+m = 10     # Masa del proyectil (kg)
+v0 = 10    # Velocidad inicial (m/s)
 
 @njit
+def equations(t, y, beta):
+    x, vx, y_pos, vy = y
+    v = np.sqrt(vx**2 + vy**2)
+    ax = -beta * v * vx / m
+    ay = -g - (beta * v * vy / m)
+    return np.array([vx, ax, vy, ay])
+
+# Función de evento para detener la integración cuando el proyectil toca el suelo
+def hit_ground(t, y, *args):
+    return y[2]  # Se activa cuando y[2] = 0
+hit_ground.terminal = True  # Detiene la integración cuando se cumple la condición
+hit_ground.direction = -1   # Solo detecta cuando está cayendo
+
+# Función para calcular el alcance horizontal
+def calculate_range(beta, theta0):
+    v0x, v0y = v0 * np.cos(theta0), v0 * np.sin(theta0)
+    y0 = [0, v0x, 0, v0y]
+    sol = solve_ivp(equations, [0, 5], y0, args=(beta,), method='RK45', max_step=0.01, 
+                    events=hit_ground)  # Usar la función de evento definida
+    return sol.t_events[0][0], sol.y[0, -1]  # Retorna tiempo y alcance
+
+# Exploración del ángulo óptimo
 def find_optimal_angle(beta):
-    """Finds the launch angle that gives the maximum range for a given beta."""
-    best_angle = 0
-    max_range = 0
-    for theta in np.linspace(0, np.pi/2, 180):  # Search angles from 0 to 90 degrees
-        r, _ = trajectory(theta, beta)
-        if r > max_range:
-            max_range = r
-            best_angle = theta
-    return np.degrees(best_angle), max_range
+    thetas = np.linspace(0, np.pi/2, 500)
+    ranges = [calculate_range(beta, theta)[1] for theta in thetas]
+    return thetas[np.argmax(ranges)]
 
-# Compute optimal angles, maximum range, and energy loss
-theta_max_list = np.zeros_like(betas)
-range_max_list = np.zeros_like(betas)
-for i, beta in enumerate(betas):
-    theta_max_list[i], range_max_list[i] = find_optimal_angle(beta)
-max_r = 0
-max_t = 0
-for i, theta in enumerate(theta_max_list):
-    if range_max_list[i]>max_r:
-        max_r = range_max_list[i]
-        max_t = theta_max_list[i]
-print("1.a: El rango máximo es " + str(max_r) + "m, y su respectivo ángulo es: " + str(max_t) + " grados.")
-energy_loss_list = np.array([trajectory(np.radians(theta_max_list[i]), beta)[1] for i, beta in enumerate(betas)])
-print(energy_loss_list[0])
-print(theta_max_list[0])
+# Energía perdida
+def energy_lost(beta, theta0):
+    v0x, v0y = v0 * np.cos(theta0), v0 * np.sin(theta0)
+    y0 = [0, v0x, 0, v0y]
+    sol = solve_ivp(equations, [0, 5], y0, args=(beta,), method='RK45', max_step=0.01)
+    E0 = 0.5 * m * v0**2
+    Ef = max(0, 0.5 * m * (sol.y[1, -1]**2 + sol.y[3, -1]**2))  # Asegurar Ef >= 0
+    return max(0, E0 - Ef)  # Asegurar que la energía perdida no sea negativa
 
-# Plot θ_max vs β
-plt.figure(figsize=(8,6))
-plt.plot(betas, theta_max_list, marker='o', linestyle='-', color='b')
+# Generación de valores de beta en escala logarítmica dentro del nuevo rango, incluyendo beta = 0
+betas = np.concatenate(([0], np.logspace(-4, 1, 20)))
+theta_max_values = [find_optimal_angle(beta) for beta in betas]
+energy_losses = [energy_lost(beta, find_optimal_angle(beta)) for beta in betas]
+
+# Imprimir los arrays de energías perdidas y ángulos máximos
+print("Energía perdida sin beta:", energy_losses)
+print("Ángulo máximo (grados):", np.degrees(theta_max_values[0]))
+
+# Gráfico 1: Ángulo de alcance máximo vs beta
+plt.figure(figsize=(8, 5))
+plt.plot(betas, np.degrees(theta_max_values), marker='o')
 plt.xscale('log')
-plt.xlabel(r'Coeficiente de fricción $\beta$')
-plt.ylabel(r'Ángulo máximo $\theta_{max}$ (degrees)')
-plt.title(r'$\theta_{max}$ vs $\beta$')
+plt.xlabel(r'$\beta$ (kg/m)')
+plt.ylabel(r'$\theta_{max}$ (grados)')
+plt.title('Ángulo de alcance máximo vs $beta$')
 plt.grid()
 plt.savefig("Tarea3/1.a.pdf")
+plt.close()
 
-# Plot ΔE vs β
-plt.figure(figsize=(8,6))
-plt.plot(betas, energy_loss_list, marker='s', linestyle='-', color='r')
+# Gráfico 2: Energía perdida vs beta
+plt.figure(figsize=(8, 5))
+plt.plot(betas, energy_losses, marker='s', color='r')
 plt.xscale('log')
-plt.xlabel(r'Coeficiente de fricción $\beta$')
-plt.ylabel(r'Energía perdida $\Delta E$ (J)')
-plt.title(r'Energía perdida $\Delta E$ vs $\beta$')
+plt.xlabel(r'$\beta$ (kg/m)')
+plt.ylabel(r'$\Delta E$ (J)')
+plt.title('Energía perdida vs $beta$')
 plt.grid()
 plt.savefig("Tarea3/1.b.pdf")
+plt.close()
+
+end = time.time()
+duration = end - start 
+print("Time: {} seconds".format(round(duration, 3)))
 
 '''Ejercicio 4: Cuantización de la energía'''
 
