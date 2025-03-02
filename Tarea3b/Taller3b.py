@@ -100,7 +100,7 @@ y = np.linspace(0, Ly, ny)
 X, Y = np.meshgrid(x, y)
 
 # Definir velocidad de onda c(x, y)
-c0 = 1  # Velocidad base (m/s)
+c0 = 0.5  # Velocidad base (m/s)
 c = np.full((ny, nx), c0)
 
 # Pared central con apertura
