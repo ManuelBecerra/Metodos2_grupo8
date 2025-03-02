@@ -3,11 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.integrate import solve_ivp
 import matplotlib.cm as cm
 from numba import njit
-import time 
 
 '''Ejercicio 1: Balística'''
- 
-start = time.time()
 # Constantes
 g = 9.773  # Gravedad en Bogotá (m/s^2)
 m = 10     # Masa del proyectil (kg)
@@ -55,10 +52,6 @@ betas = np.concatenate(([0], np.logspace(-4, 1, 20)))
 theta_max_values = [find_optimal_angle(beta) for beta in betas]
 energy_losses = [energy_lost(beta, find_optimal_angle(beta)) for beta in betas]
 
-# Imprimir los arrays de energías perdidas y ángulos máximos
-print("Energía perdida sin beta:", energy_losses)
-print("Ángulo máximo (grados):", np.degrees(theta_max_values[0]))
-
 # Gráfico 1: Ángulo de alcance máximo vs beta
 plt.figure(figsize=(8, 5))
 plt.plot(betas, np.degrees(theta_max_values), marker='o')
@@ -80,10 +73,6 @@ plt.title('Energía perdida vs $beta$')
 plt.grid()
 plt.savefig("Tarea3/1.b.pdf")
 plt.close()
-
-end = time.time()
-duration = end - start 
-print("Time: {} seconds".format(round(duration, 3)))
 
 '''Ejercicio 4: Cuantización de la energía'''
 
