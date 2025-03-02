@@ -100,7 +100,7 @@ y = np.linspace(0, Ly, ny)
 X, Y = np.meshgrid(x, y)
 
 # Definir velocidad de onda c(x, y)
-c0 = 0.5  # Velocidad base (m/s)
+c0 = 1  # Velocidad base (m/s)
 c = np.full((ny, nx), c0)
 
 # Pared central con apertura
@@ -110,7 +110,7 @@ middle_wall = (np.abs(Y - Lx / 2) < wy / 2) & (np.abs(X - Lx / 4) >= wx / 2)
 c[middle_wall] = 0  # Las paredes bloquean las ondas
 
 # Definir la lente elíptica con la ecuación dada en la imagen
-lens_mask = (((Y - Lx / 4) ** 2) + 3 * ((X - Lx / 2) ** 2)) <= (1 / 25)
+lens_mask = ((((Y - Lx / 4) ** 2) + 3 * ((X - Lx / 2) ** 2)) <= (1 / 25)) & (X > 1)
 c[lens_mask & (X > Lx / 2)] = c0 / 5  # Reducir velocidad en la lente
 
 # Paredes superior e inferior de la lente
@@ -131,7 +131,7 @@ src_ix, src_iy = int(src_x / dx), int(src_y / dy)
 
 # Inicializar figura
 fig, ax = plt.subplots()
-img = ax.imshow(np.zeros((ny, nx)), extent=[0, Lx, 0, Ly], origin='lower', cmap='ocean', vmin=-A, vmax=A)
+img = ax.imshow(np.zeros((ny, nx)), extent=[0, Lx, 0, Ly], origin='lower', cmap='seismic', vmin=-A/2, vmax=A/2)
 ax.set_facecolor('white')
 ax.set_title("Simulación de Onda 2D")
 ax.set_xlabel("x (m)")
