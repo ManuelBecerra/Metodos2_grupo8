@@ -82,3 +82,101 @@ ani = animation.FuncAnimation(fig, update, frames=num_frames, interval=40, blit=
 Writer = animation.writers['ffmpeg']
 writer = Writer(fps=50, metadata=dict(artist='Maria Paula'), bitrate=1800)
 ani.save("Tarea3b/2.mp4", writer=writer)
+
+'''Ejercicio 4: Simulación'''
+
+# Parámetros del problema
+Lx, Ly = 2.0, 1.0  # Dimensiones del tanque (m)
+dx = dy = 0.01  # Resolución espacial (m)
+dt = 0.001  # Paso temporal (s)
+t_max = 2.0  # Tiempo total de simulación (s)
+f = 10  # Frecuencia de la fuente (Hz)
+A = 0.01  # Amplitud de la onda (m)
+
+# Definir mallas
+nx, ny = int(Lx/dx), int(Ly/dy)
+x = np.linspace(0, Lx, nx)
+y = np.linspace(0, Ly, ny)
+X, Y = np.meshgrid(x, y)
+
+# Definir velocidad de onda c(x, y)
+c0 = 0.5  # Velocidad base (m/s)
+c = np.full((ny, nx), c0)
+
+# Pared central con apertura
+wy = 0.04  # Ancho de la pared
+wx = 0.4   # Apertura
+middle_wall = (np.abs(Y - Lx / 2) < wy / 2) & (np.abs(X - Lx / 4) >= wx / 2)
+c[middle_wall] = 0  # Las paredes bloquean las ondas
+
+# Definir la lente elíptica con la ecuación dada en la imagen
+lens_mask = (((Y - Lx / 4) ** 2) + 3 * ((X - Lx / 2) ** 2)) <= (1 / 25)
+c[lens_mask & (X > Lx / 2)] = c0 / 5  # Reducir velocidad en la lente
+
+# Paredes superior e inferior de la lente
+lens_walls = ((X > 0.98) & (X < 1.02)) & ((Y < 0.4) | (Y > 0.6))
+c[lens_walls] = 0  # Bloquear el paso de la onda
+
+# Calcular el coeficiente de Courant
+courant_number = np.max(c) * dt / dx
+print(f"Coeficiente de Courant ejercicio 4: {courant_number:.3f}")
+
+# Condiciones iniciales
+u = np.zeros((ny, nx))  # Estado en t
+u_prev = np.zeros((ny, nx))  # Estado en t - dt
+
+# Ubicación de la fuente (en la parte inferior del tanque)
+src_x, src_y = 0.5, 0.5
+src_ix, src_iy = int(src_x / dx), int(src_y / dy)
+
+# Inicializar figura
+fig, ax = plt.subplots()
+img = ax.imshow(np.zeros((ny, nx)), extent=[0, Lx, 0, Ly], origin='lower', cmap='ocean', vmin=-A, vmax=A)
+ax.set_facecolor('white')
+ax.set_title("Simulación de Onda 2D")
+ax.set_xlabel("x (m)")
+ax.set_ylabel("y (m)")
+
+# Actualizar función
+def update(frame):
+    global u, u_prev
+    
+    # Aplicar diferencias finitas
+    u_next = 2*u - u_prev + (dt**2 * c**2) * (
+        (np.roll(u, 1, axis=0) + np.roll(u, -1, axis=0) - 2*u) / dy**2 +
+        (np.roll(u, 1, axis=1) + np.roll(u, -1, axis=1) - 2*u) / dx**2
+    )
+    
+    # Reducir velocidad dentro de la región de la lente
+    u_next[lens_mask] = 2*u[lens_mask] - u_prev[lens_mask] + (dt**2 * (c0/5)**2) * (
+        (np.roll(u, 1, axis=0)[lens_mask] + np.roll(u, -1, axis=0)[lens_mask] - 2*u[lens_mask]) / dy**2 +
+        (np.roll(u, 1, axis=1)[lens_mask] + np.roll(u, -1, axis=1)[lens_mask] - 2*u[lens_mask]) / dx**2
+    )
+
+    # Aplicar condición de frontera (paredes externas, centrales y de la lente)
+    u_next[0, :] = u_next[-1, :] = 0
+    u_next[:, 0] = u_next[:, -1] = 0
+    u_next[middle_wall] = 0  # Pared central sin apertura
+    u_next[lens_walls] = 0  # Paredes superior e inferior de la lente
+
+    # Aplicar la fuente
+    u_next[src_iy, src_ix] += A * np.sin(2 * np.pi * f * frame * dt)
+    
+    # Actualizar estados
+    u_prev = u.copy()
+    u = u_next.copy()
+    
+    # Actualizar imagen
+    img.set_array(u)
+    return [img]
+
+# Crear animación
+frames = int(t_max / dt)
+ani = animation.FuncAnimation(fig, update, frames=frames, interval=dt*1000, blit=True)
+
+Writer = animation.writers['ffmpeg']
+writer = Writer(fps=30, metadata=dict(artist='Bruno Abello'), bitrate=1800)
+ani.save("Tarea3b/2.mp4", writer=writer)
+
+# Mostrar animación
+#plt.show()
