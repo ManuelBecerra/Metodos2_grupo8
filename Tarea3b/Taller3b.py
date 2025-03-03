@@ -162,6 +162,12 @@ def force(x, y):
     f_x, f_y = -x / r**3, -y / r**3
     return f_x, f_y
 
+def f_coulomb(x, y):
+    r = np.sqrt(x**2 + y**2)
+    f_x = -x / r**3
+    f_y = -y / r**3
+    return f_x, f_y
+
 def f_coulomb_prima (x, y, vx, vy):
   fx, fy = f_coulomb(x, y)
   return vx, vy, fx, fy
