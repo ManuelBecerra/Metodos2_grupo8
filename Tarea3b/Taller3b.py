@@ -142,6 +142,9 @@ Writer = animation.writers['ffmpeg']
 writer = Writer(fps=50, metadata=dict(artist='Maria Paula'), bitrate=1800)
 ani.save("Tarea3b/2.mp4", writer=writer)
 
+
+'''Ejercicio 3: Ondas no lineales: Plasma y fluidos'''
+
 '''Ejercicio 4: Simulación'''
 
 # Parámetros del problema

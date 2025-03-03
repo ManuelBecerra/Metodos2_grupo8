@@ -75,6 +75,9 @@ plt.grid()
 plt.savefig("Tarea3/1.b.pdf")
 plt.close()
 
+'''Ejercicio 2: Paradoja en la física clásica'''
+
+
 """Ejercicio 3: Comprobación de la relatividad general"""
 
 import matplotlib.animation as animation
