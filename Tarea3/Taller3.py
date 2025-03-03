@@ -338,53 +338,71 @@ ani = animation.FuncAnimation(fig, update, frames=len(x_sol), interval=10, blit=
 ani.save("Tarea3/3.a.mp4", writer="ffmpeg", fps=30)
 
 #3.b
-from scipy.signal import argrelextrema
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.integrate import solve_ivp
 
-# Calcular la distancia radial al Sol
-r_sol = np.sqrt(x_sol**2 + y_sol**2)
+# Constantes
+mu = 39.4234021 
+a = 0.38709893  # UA (semieje mayor)
+e = 0.20563069  # Excentricidad
+alpha = 1.0977e-8  # Factor relativista exagerado para efectos visuales
 
-# Encontrar periastros y apoastros en toda la simulación
-peri_idxs_all = argrelextrema(r_sol, np.less)[0]
-apo_idxs_all = argrelextrema(r_sol, np.greater)[0]
+# Condiciones iniciales
+x0 = a * (1 + e)
+y0 = 0
+vx0 = 0
+vy0 = np.sqrt(mu / a) * np.sqrt((1 - e) / (1 + e))
 
-# Definir el nuevo rango de tiempo en años (4 a 6 años) para que aparezcan solo un par de lineas
-#si no hacemos esto se repiten las lineas ya que los datos son periodicos
-t_min, t_max = 4, 5.2
+# Ecuaciones de movimiento
+def equations(t, Y):
+    x, y, vx, vy = Y
+    r = np.sqrt(x**2 + y**2)
+    factor = 1 + alpha / r**2  # Corrección relativista
+    ax = -mu * x / r**3 * factor
+    ay = -mu * y / r**3 * factor
+    return [vx, vy, ax, ay]
 
-# Filtrar periastros dentro del rango [4, 6] años
-peri_idxs = peri_idxs_all[(sol.t[peri_idxs_all] >= t_min) & (sol.t[peri_idxs_all] <= t_max)]
-time_peri_cent = sol.t[peri_idxs] / 100  # Convertir a siglos
-theta_peri = np.arctan2(y_sol[peri_idxs], x_sol[peri_idxs])
-theta_peri = np.mod(theta_peri, 2 * np.pi)
-theta_peri_arcsec = np.degrees(theta_peri) * 3600
+def event(t,Y):
+  x, y, vx, vy = Y
+  return x * vx + y * vy
 
-# Filtrar apoastros dentro del rango [4, 6] años
-apo_idxs = apo_idxs_all[(sol.t[apo_idxs_all] >= t_min) & (sol.t[apo_idxs_all] <= t_max)]
-time_apo_cent = sol.t[apo_idxs] / 100  # Convertir a siglos
-theta_apo = np.arctan2(y_sol[apo_idxs], x_sol[apo_idxs])
-theta_apo = np.mod(theta_apo, 2 * np.pi)
-theta_apo_arcsec = np.degrees(theta_apo) * 3600
+event.direction = 1
 
-# Ajuste lineal solo con los datos filtrados
-p_peri = np.polyfit(time_peri_cent, theta_peri_arcsec, 1)
-p_apo = np.polyfit(time_apo_cent, theta_apo_arcsec, 1)
+# Simulación con solve_ivp
+t_span = (0, 10)  # Simular 10 años
+t_eval = np.linspace(0, 10, 1000)  # Puntos de evaluación
+sol = solve_ivp(equations, t_span, [x0, y0, vx0, vy0], method='Radau', t_eval=t_eval, max_step=1e-3, events=[event])
 
-precesion_peri_arcsec_por_siglo = p_peri[0] * 100
-precesion_apo_arcsec_por_siglo = p_apo[0] * 100
+if len(sol.t_events) > 0 and len(sol.t_events[0]) > 0:
+    t_sol = sol.t_events[0]  # Tiempos de los eventos
+    x_sol = sol.y_events[0][:, 0]  # Coordenada x en eventos
+    y_sol = sol.y_events[0][:, 1]  # Coordenada y en eventos
 
-# Graficar precesión con el nuevo rango de tiempo
+# Calcular ángulos
+angles = np.arctan2(y_sol, x_sol)
+angles = np.mod(angles, 2 * np.pi)  # Ajustar ángulos al rango [0, 2π]
+
+# Convertir ángulos a segundos de arco
+angles_deg = np.degrees(angles)
+angles_arcsec = angles_deg * 3600
+
+# Ajuste lineal a la precesión
+fit = np.polyfit(t_sol, angles_arcsec, 1)  # Ajuste lineal
+precesion = fit[0]  # Pendiente (arcsec/año)
+precesion_por_siglo = precesion * 100  # Arcsec/siglo
+
+# Gráfica de precesión
 plt.figure(figsize=(8, 5))
-plt.plot(time_peri_cent, theta_peri_arcsec, 'bo', label='Periastros')
-plt.plot(time_peri_cent, np.polyval(p_peri, time_peri_cent), 'b-', label=f'Peri: {precesion_peri_arcsec_por_siglo:.2f} arcsec/siglo')
-
-plt.plot(time_apo_cent, theta_apo_arcsec, 'ro', label='Apoastros')
-plt.plot(time_apo_cent, np.polyval(p_apo, time_apo_cent), 'r-', label=f'Apo: {precesion_apo_arcsec_por_siglo:.2f} arcsec/siglo')
-
-plt.xlabel("Tiempo (siglos)")
-plt.ylabel("Precesión (arcosegundos)")
+plt.plot(t_sol, angles_arcsec, 'bo', label="Datos")
+plt.plot(t_sol, np.polyval(fit, t_sol), 'r-', label=f"Ajuste lineal: {precesion:.4f} arcsec/año")
+plt.xlabel("Tiempo (años)")
+plt.ylabel("Ángulo del periastro (arcsec)")
+plt.title(f"Precesión de Mercurio")
 plt.legend()
-plt.xlim(t_min / 100, t_max / 100)  # Ajustar a siglos (4 a 6 años = 0.04 a 0.06 siglos)
-plt.savefig("Tarea3/3.b.pdf")
+plt.grid()
+plt.savefig("3.b.pdf")  # Guardar la gráfica
+plt.show()
 
 
 '''Ejercicio 4: Cuantización de la energía'''

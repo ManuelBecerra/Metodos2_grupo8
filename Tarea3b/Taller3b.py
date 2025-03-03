@@ -145,6 +145,72 @@ ani.save("Tarea3b/2.mp4", writer=writer)
 
 '''Ejercicio 3: Ondas no lineales: Plasma y fluidos'''
 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# Parámetros
+dx = 0.02  # Espaciado espacial
+dt = 0.0005  # Paso temporal
+alpha = 0.022  # Parámetro de la ecuación
+L = 2  # Dominio espacial
+T = 2000  # Tiempo de simulación
+steps = int(T / dt)  # Número de pasos
+
+# Discretización del espacio y condiciones iniciales
+x = np.linspace(0, L, int(L/dx), endpoint=False)
+Nx = len(x)
+psi = np.cos(np.pi * x)  # Condición inicial
+
+# Inicialización de la solución
+psi_new = np.copy(psi)
+psi_old = np.copy(psi)
+
+# Almacenamiento para cantidades conservadas
+masa, momento, energia = [], [], []
+
+# Simulación usando el esquema de diferencias finitas de Zabusky y Kruskal
+def update():
+    global psi, psi_new, psi_old
+    for step in range(steps):
+        psi_new = psi - (1/3)*(dt/dx)*(np.roll(psi, 1) + psi + np.roll(psi, -1))*(np.roll(psi, 1) - np.roll(psi, -1)) - ((alpha**2 * dt)/dx**3)*(np.roll(psi, 2) - 2*np.roll(psi, 1) + 2*np.roll(psi, -1) - np.roll(psi, -2))
+        psi_new[0] = psi_new[-2]  # Condiciones de frontera periódicas
+        psi_new[-1] = psi_new[1]
+        psi_old = np.copy(psi)
+        psi = np.copy(psi_new)
+        # Cálculo de cantidades conservadas
+        masa.append(np.trapz(psi, x))
+        momento.append(np.trapz(psi**2, x))
+        energia.append(np.trapz((psi**3 / 3) - (alpha * np.gradient(psi, dx))**2, x))
+        yield psi
+
+# Animación de la simulación
+fig, ax = plt.subplots()
+line, = ax.plot(x, psi, 'b')
+ax.set_ylim(-2, 3)
+ax.set_xlim(0, L)
+
+def animate(data):
+    line.set_ydata(data)
+    return line,
+
+ani = animation.FuncAnimation(fig, animate, update, interval=20, blit=True, save_count=400)
+ani.save('3.a.mp4', fps=20)
+plt.close()
+
+# Gráficas de cantidades conservadas
+fig, axs = plt.subplots(3, 1, figsize=(8, 6))
+t = np.linspace(0, T, len(masa))
+axs[0].plot(t, masa, label='Masa')
+axs[1].plot(t, momento, label='Momento')
+axs[2].plot(t, energia, label='Energía')
+
+for ax in axs:
+    ax.legend()
+    ax.set_xlabel('Tiempo')
+plt.tight_layout()
+plt.savefig('3.b.pdf')
+plt.show()
 
 '''Ejercicio 4: Simulación'''
 
