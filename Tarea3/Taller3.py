@@ -77,6 +77,95 @@ plt.close()
 
 '''Ejercicio 2: Paradoja en la física clásica'''
 
+# Definir condiciones iniciales en unidades atómicas
+x = 1.0
+y = 0.0
+vx = 0.0
+vy = 1.0
+
+# Paso de tiempo y número de pasos
+dt = 0.01
+n_steps = 10000
+
+# Listas para almacenar la trayectoria
+x_vals, y_vals = [x], [y]
+t_vals = [0]
+
+def f_coulomb(x, y):
+    r = np.sqrt(x**2 + y**2)
+    f_x = -x / r**3
+    f_y = -y / r**3
+    return f_x, f_y
+
+def f_coulomb_prima (x, y, vx, vy):
+  fx, fy = f_coulomb(x, y)
+  return vx, vy, fx, fy # Deriv. posición es velocidad, deriv. velocidad es aceleración pero como masa = 1 y F=ma, se puede igualar a fuerza
+
+def kinetic_energy(vx, vy):
+    return 0.5 * (vx**2 + vy**2)
+
+def radio(x, y):
+    return np.sqrt(x**2 + y**2)
+
+# Implementación método Runge-Kutta
+def rk4_step(f, x, y, vx, vy, dt):
+
+    k1x, k1y, k1vx, k1vy = f(x, y, vx, vy)
+    k2x, k2y, k2vx, k2vy = f(x + 0.5 * dt * k1x, y + 0.5 * dt * k1y, vx + 0.5 * dt * k1vx, vy + 0.5 * dt * k1vy)
+    k3x, k3y, k3vx, k3vy = f(x + 0.5 * dt * k2x, y + 0.5 * dt * k2y, vx + 0.5 * dt * k2vx, vy + 0.5 * dt * k2vy)
+    k4x, k4y, k4vx, k4vy = f(x + dt * k3x, y + dt * k3y, vx + dt * k3vx, vy + dt * k3vy)
+
+    x_new = x + (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x)
+    y_new = y + (dt / 6) * (k1y + 2 * k2y + 2 * k3y + k4y)
+    vx_new = vx + (dt / 6) * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)
+    vy_new = vy + (dt / 6) * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)
+
+    return x_new, y_new, vx_new, vy_new
+
+# Variables para el período
+total_time = 0
+t_cross = []  # Para medir el período cuando cruza el eje y positivo
+
+# Valores de energía cinética y radio para comprobar que sean constantes en el tiempo
+k_energy_vals = [0.5]
+rad_vals = [1]
+
+# Iterar con el método de Runge-Kutta
+for step in range(n_steps):
+    x, y, vx, vy = rk4_step(f_coulomb_prima, x, y, vx, vy, dt)
+
+    # Guardar valores
+    x_vals.append(x)
+    y_vals.append(y)
+    total_time += dt
+    t_vals.append(total_time)
+    k_energy_vals.append(kinetic_energy(vx, vy))
+    rad_vals.append(radio(x, y))
+
+    # Detectar cruces por y > 0 (para medir período)
+    if y_vals[-2] < 0 and y > 0:
+        t_cross.append(total_time)
+        if len(t_cross) > 1:
+            break  # Solo necesitamos un ciclo completo
+
+# Calcular período simulado
+P_sim = (t_cross[1] - t_cross[0])*24.2
+P_teo = (2 * np.pi)*24.2  # Teórico en attosegundos
+
+# Mostrar resultados
+print(f'2.a) {P_teo = :.5f}; {P_sim = :.5f}')
+
+# Demostración energía cinética y radio constantes en el tiempo
+plt.plot(t_vals, k_energy_vals, label='Energía cinética')
+plt.plot(t_vals, rad_vals, label='Radio')
+plt.xlabel('Tiempo')
+plt.legend()
+plt.show()
+
+# Trayectoria de electrón
+plt.figure(figsize=(6,6))
+plt.plot(x_vals, y_vals, label='Órbita del electrón')
+plt.scatter([0], [0], color='red', label='Protón (núcleo)')
 
 """Ejercicio 3: Comprobación de la relatividad general"""
 

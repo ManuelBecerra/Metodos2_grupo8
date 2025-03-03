@@ -144,7 +144,111 @@ ani.save("Tarea3b/2.mp4", writer=writer)
 
 
 '''Ejercicio 3: Ondas no lineales: Plasma y fluidos'''
+# Definir condiciones iniciales en unidades atómicas
+x, y = 1.0, 0.0
+vx, vy = 0.0, 1.0
 
+# Paso de tiempo y parámetros
+alpha = 1  # Constante de estructura fina
+dt = 0.001  # Paso de tiempo pequeño
+n_steps = 100000  # Número máximo de pasos
+
+# Listas para almacenar datos
+x_vals, y_vals, t_vals = [x], [y], [0]
+r_vals, KE_vals, E_vals = [1], [0.5], [-0.5]
+
+def force(x, y):
+    r = np.sqrt(x**2 + y**2)
+    f_x, f_y = -x / r**3, -y / r**3
+    return f_x, f_y
+
+def f_coulomb_prima (x, y, vx, vy):
+  fx, fy = f_coulomb(x, y)
+  return vx, vy, fx, fy
+
+def kinetic_energy(vx, vy):
+    return 0.5 * (vx**2 + vy**2)
+
+def radio(x, y):
+    return np.sqrt(x**2 + y**2)
+
+def total_energy(x, y, vx, vy):
+    return kinetic_energy(vx, vy) - (1/radio(x, y))
+
+# Implementación método Runge-Kutta
+def rk4_step(f, x, y, vx, vy, dt):
+
+    k1x, k1y, k1vx, k1vy = f(x, y, vx, vy)
+    k2x, k2y, k2vx, k2vy = f(x + 0.5 * dt * k1x, y + 0.5 * dt * k1y, vx + 0.5 * dt * k1vx, vy + 0.5 * dt * k1vy)
+    k3x, k3y, k3vx, k3vy = f(x + 0.5 * dt * k2x, y + 0.5 * dt * k2y, vx + 0.5 * dt * k2vx, vy + 0.5 * dt * k2vy)
+    k4x, k4y, k4vx, k4vy = f(x + dt * k3x, y + dt * k3y, vx + dt * k3vx, vy + dt * k3vy)
+
+    x_new = x + (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x)
+    y_new = y + (dt / 6) * (k1y + 2 * k2y + 2 * k3y + k4y)
+    vx_new = vx + (dt / 6) * (k1vx + 2 * k2vx + 2 * k3vx + k4vx)
+    vy_new = vy + (dt / 6) * (k1vy + 2 * k2vy + 2 * k3vy + k4vy)
+
+    return x_new, y_new, vx_new, vy_new
+
+total_time = 0
+t_fall = None  # Tiempo de caída del electrón
+
+for step in range(n_steps):
+    x, y, vx, vy = rk4_step(f_coulomb_prima, x, y, vx, vy, dt)
+
+    # Aplicar corrección por pérdida de energía (Larmor)
+    v = np.sqrt(vx**2 + vy**2)
+    v_corr = np.sqrt(v - ((4/3) * alpha**3 * dt))
+    factor = v_corr / v
+    vx *= factor
+    vy *= factor
+
+    # Guardar valores
+    x_vals.append(x)
+    y_vals.append(y)
+    t_vals.append(total_time)
+    r_vals.append(radio(x, y))
+    KE_vals.append(kinetic_energy(vx, vy))
+    E_vals.append(total_energy(x, y, vx, vy))
+    total_time += dt
+
+    # Condición de caída al núcleo
+    if r_vals[step] < 0.01:
+        t_fall = total_time
+        break
+
+# Convertir tiempo de caída a attosegundos
+if t_fall:
+    t_fall_as = t_fall * 24.18  # Conversión de unidades atómicas a attosegundos
+else:
+    t_fall_as = None
+
+print(f'2.b) {t_fall_as = :.5f} as')
+
+# Gráfica de la órbita
+plt.figure(figsize=(6,6))
+plt.plot(x_vals, y_vals, label='Órbita del electrón')
+plt.scatter([0], [0], color='red', label='Protón (núcleo)')
+plt.xlabel('x (a.u.)')
+plt.ylabel('y (a.u.)')
+plt.title('Órbita del electrón con radiación de Larmor')
+plt.legend(loc = 'upper right')
+plt.axis('equal')
+plt.savefig('Tarea3/2.b.XY.pdf')
+
+# Gráficas de diagnóstico
+fig, axs = plt.subplots(3, 1, figsize=(6, 10))
+axs[0].plot(t_vals[:len(E_vals)], E_vals, label='Energía total')
+axs[0].set_ylabel('E (a.u.)')
+axs[0].legend()
+axs[1].plot(t_vals[:len(KE_vals)], KE_vals, label='Energía cinética')
+axs[1].set_ylabel('KE (a.u.)')
+axs[1].legend()
+axs[2].plot(t_vals[:len(r_vals)], r_vals, label='Radio')
+axs[2].set_xlabel('Tiempo (a.u.)')
+axs[2].set_ylabel('r (a.u.)')
+axs[2].legend()
+plt.savefig('Tarea3/2.b.diagnostics.pdf')
 '''Ejercicio 4: Simulación'''
 
 # Parámetros del problema
@@ -240,5 +344,3 @@ Writer = animation.writers['ffmpeg']
 writer = Writer(fps=30, metadata=dict(artist='Bruno Abello'), bitrate=1800)
 ani.save("Tarea3b/4.mp4", writer=writer)
 
-# Mostrar animación
-#plt.show()
