@@ -1,3 +1,62 @@
+#EJERCICIO 1
+
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+# Parámetros
+N = 70  # Tamaño de la malla (ajustar según precisión requerida)
+L = 1.1  # Extensión de la malla (ligeramente mayor al círculo unitario)
+dx = 2 * L / (N - 1)
+dy = dx
+tol = 1e-4  # Tolerancia para la convergencia
+max_iter = 15000  # Máximo número de iteraciones
+omega = 1.8  # Factor de sobre-relajación (ajustar para acelerar)
+
+# Crear malla
+x = np.linspace(-L, L, N)
+y = np.linspace(-L, L, N)
+X, Y = np.meshgrid(x, y)
+phi = np.random.rand(N, N) * 0.1  # Condiciones iniciales aleatorias
+
+# Función rho(x, y) = - (x + y)
+rho = - (X + Y)
+
+# Condiciones de frontera
+R = np.sqrt(X**2 + Y**2)
+Theta = np.arctan2(Y, X)
+phi[R >= 1] = np.sin(7 * Theta[R >= 1])  # φ en el borde del círculo
+
+# Iteraciones usando Gauss-Seidel con SOR, este es una forma particular del método de FINITAS DIFERENCIAS con unos cambios para hacerlo más efectivo
+#tiene sobre-relajación que acelera la convergencia a valores buenos introduciendo un factor de relajación ω para actualizar más rápido los valores
+#y Gauss-Seidel es que apenas calcula un valor nuevo para un punto en la amtriz, ovlida el valor viejo.
+for _ in range(max_iter):
+    phi_old = phi.copy()
+    for i in range(1, N-1):
+        for j in range(1, N-1):
+            if R[i, j] < 1:  # Solo actualizar dentro del disco
+                phi[i, j] = (1 - omega) * phi[i, j] + omega * 0.25 * (
+                    phi[i+1, j] + phi[i-1, j] + phi[i, j+1] + phi[i, j-1] - dx**2 * rho[i, j]
+                )
+    
+    # Criterio de convergencia, asegura que la solución pueda converger a algo, si no pongo esto entonces 1. se demoraba mucho y 2. puede que no converge nunca
+    if np.linalg.norm(phi - phi_old) < tol:
+        break
+
+# Gráfica 3D de la solución
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_surface(X, Y, phi, cmap='jet')
+
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('ϕ(x, y)')
+ax.set_title('Solución de la ecuación de Poisson')
+
+plt.savefig("1.png")  # Guardar la imagen
+
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
