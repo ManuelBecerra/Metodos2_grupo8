@@ -1,9 +1,9 @@
-#EJERCICIO 1
 
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+'''Ejercicio 1: Poisson en un disco'''
 # Parámetros
 N = 70  # Tamaño de la malla (ajustar según precisión requerida)
 L = 1.1  # Extensión de la malla (ligeramente mayor al círculo unitario)
@@ -53,7 +53,7 @@ ax.set_ylabel('y')
 ax.set_zlabel('ϕ(x, y)')
 ax.set_title('Solución de la ecuación de Poisson')
 
-plt.savefig("1.png")  # Guardar la imagen
+plt.savefig("Tarea3b/1.png")  # Guardar la imagen
 
 
 

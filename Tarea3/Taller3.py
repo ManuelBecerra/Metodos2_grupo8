@@ -4,6 +4,7 @@ from scipy.integrate import solve_ivp
 import matplotlib.cm as cm
 from numba import njit
 
+
 '''Ejercicio 1: Balística'''
 # Constantes
 g = 9.773  # Gravedad en Bogotá (m/s^2)
@@ -74,7 +75,7 @@ plt.grid()
 plt.savefig("Tarea3/1.b.pdf")
 plt.close()
 
-#PROBLEMA 3
+"""Ejercicio 3: Comprobación de la relatividad general"""
 
 import matplotlib.animation as animation
 
@@ -131,7 +132,7 @@ def update(frame):
 ani = animation.FuncAnimation(fig, update, frames=len(x_sol), interval=10, blit=False)
 
 # Guardar animación en MP4
-ani.save("3.a.mp4", writer="ffmpeg", fps=30)
+ani.save("Tarea3/3.a.mp4", writer="ffmpeg", fps=30)
 
 #3.b
 from scipy.signal import argrelextrema
@@ -180,7 +181,7 @@ plt.xlabel("Tiempo (siglos)")
 plt.ylabel("Precesión (arcosegundos)")
 plt.legend()
 plt.xlim(t_min / 100, t_max / 100)  # Ajustar a siglos (4 a 6 años = 0.04 a 0.06 siglos)
-plt.savefig("3.b.pdf")
+plt.savefig("Tarea3/3.b.pdf")
 
 print(f"Precesión periastros: {precesion_peri_arcsec_por_siglo:.2f} arcsec/siglo")
 print(f"Precesión apoastros: {precesion_apo_arcsec_por_siglo:.2f} arcsec/siglo")
