@@ -401,8 +401,8 @@ plt.ylabel("Ángulo del periastro (arcsec)")
 plt.title(f"Precesión de Mercurio")
 plt.legend()
 plt.grid()
-plt.savefig("3.b.pdf")  # Guardar la gráfica
-plt.show()
+plt.savefig("Tarea3/3.b.pdf")  # Guardar la gráfica
+#plt.show()
 
 
 '''Ejercicio 4: Cuantización de la energía'''

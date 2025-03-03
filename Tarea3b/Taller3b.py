@@ -195,7 +195,7 @@ def animate(data):
     return line,
 
 ani = animation.FuncAnimation(fig, animate, update, interval=20, blit=True, save_count=400)
-ani.save('3.a.mp4', fps=20)
+ani.save('Tarea3b/3.a.mp4', fps=20)
 plt.close()
 
 # Gráficas de cantidades conservadas
@@ -209,8 +209,8 @@ for ax in axs:
     ax.legend()
     ax.set_xlabel('Tiempo')
 plt.tight_layout()
-plt.savefig('3.b.pdf')
-plt.show()
+plt.savefig('Tarea3b/3.b.pdf')
+#plt.show()
 
 '''Ejercicio 4: Simulación'''
 
