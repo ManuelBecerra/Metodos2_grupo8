@@ -109,4 +109,202 @@ plt.savefig('Tarea4/2.pdf')
 
 '''Ejercicio 3: Modelo de Ising con Hetrópolis Hastings'''
 
-'''Ejercicio 4: Generación de lenguaje natural con Cadenas de Markov'''
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# Parámetros del sistema
+N = 150
+J = 0.2
+beta = 10
+
+# Inicialización del sistema con valores aleatorios de -1 y 1
+espines = np.random.choice([-1, 1], size=(N, N))
+
+def energia_sitio(espines, i, j):
+    # Calcula la energía de interacción de un sitio (i, j) con sus vecinos.
+    arriba = espines[(i - 1) % N, j]
+    abajo = espines[(i + 1) % N, j]
+    izquierda = espines[i, (j - 1) % N]
+    derecha = espines[i, (j + 1) % N]
+    return -J * espines[i, j] * (arriba + abajo + izquierda + derecha)
+
+def metropolis_step(espines, beta):
+    # Realiza un paso del algoritmo de Metropolis-Hastings.
+    i, j = np.random.randint(0, N, size=2)  # Seleccionar un espín aleatorio
+    E_old = energia_sitio(espines, i, j)
+    espines[i, j] *= -1  # Voltear el espín
+    E_new = energia_sitio(espines, i, j)
+
+    dE = E_new - E_old
+    if dE > 0 and np.random.rand() >= np.exp(-beta * dE):
+        espines[i, j] *= -1  # Revertir cambio si no se acepta
+
+def update(frame):
+    # Actualiza el estado del sistema para la animación.
+    for _ in range(400):
+        metropolis_step(espines, beta)
+    im.set_array(espines)
+    return [im]
+
+# Configuración de la animación
+fig, ax = plt.subplots()
+im = ax.imshow(espines, cmap='gray', animated=True)
+ani = animation.FuncAnimation(fig, update, frames=500, interval=50, blit=True)
+
+# Guardar animación
+ani.save("3.mp4", writer="ffmpeg", fps=30)
+#plt.show()
+
+'''Ejercicio 5: Evolución temporal de procesos estocásticos'''
+
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+import random
+import time
+from numba import njit
+
+# Datos del problema
+A = 1000  # Producción diaria de U
+B = 20     # Extracción diaria de Pu
+
+# Tiempos de vida media (en días)
+t_half_U = 23.4 / (24 * 60)  # Convertido a días
+t_half_Np = 2.36
+
+# Cálculo de las constantes de decaimiento lambda
+lambda_U = np.log(2) / t_half_U
+lambda_Np = np.log(2) / t_half_Np
+
+# Sistema de ecuaciones diferenciales
+def sistema(t, y):
+    U, Np, Pu = y
+    dU_dt = A - lambda_U * U
+    dNp_dt = lambda_U * U - lambda_Np * Np
+    dPu_dt = lambda_Np * Np - B * Pu
+    return [dU_dt, dNp_dt, dPu_dt]
+
+# Condiciones iniciales
+U0, Np0, Pu0 = 1, 1, 1
+
+# Tiempo de simulación (30 días)
+tiempo_simulacion = 30
+
+# Medición del tiempo de ejecución
+start_time = time.time()
+
+# Resolviendo el sistema de ecuaciones diferenciales
+sol = solve_ivp(sistema, [0, tiempo_simulacion], [U0, Np0, Pu0], t_eval=np.linspace(0, tiempo_simulacion, 300))
+
+# Graficamos los resultados
+plt.figure(figsize=(10, 6))
+plt.plot(sol.t, sol.y[0], label='Uranio-239 (U)')
+plt.plot(sol.t, sol.y[1], label='Neptunio-239 (Np)')
+plt.plot(sol.t, sol.y[2], label='Plutonio-239 (Pu)')
+plt.xlabel('Tiempo (días)')
+plt.ylabel('Cantidad de material')
+plt.yscale('log')
+plt.legend()
+plt.title('Evolución de las cantidades de U, Np y Pu en 30 días')
+plt.grid()
+
+# Imprimir los valores finales de cada átomo
+print(f"Cantidad final de U: {sol.y[0, -1]:.2f}")
+print(f"Cantidad final de Np: {sol.y[1, -1]:.2f}")
+print(f"Cantidad final de Pu: {sol.y[2, -1]:.2f}")
+
+# Método basado en resolver_sistema para verificar estabilidad
+def verificar_estabilidad(sol):
+    """Evalúa si las soluciones han alcanzado estabilidad."""
+    ultima_seccion = sol.y[:, -10:]  # Últimos 10 valores
+    cambios = np.abs(np.diff(ultima_seccion, axis=1))
+    estabilidad = np.all(cambios < 1e-1, axis=1)
+    return estabilidad
+
+estabilidad = verificar_estabilidad(sol)
+
+print("\nAnálisis de estabilidad:")
+print(f"¿El Uranio-239 ha alcanzado estabilidad? {'Sí' if estabilidad[0] else 'No'}")
+print(f"¿El Neptunio-239 ha alcanzado estabilidad? {'Sí' if estabilidad[1] else 'No'}")
+print(f"¿El Plutonio-239 ha alcanzado estabilidad? {'Sí' if estabilidad[2] else 'No'}")
+
+R = np.array([[1, 0, 0],[-1, 1, 0],[0, -1, 1],[0, 0, -1]])
+# Simulación estocástica con algoritmo de Gillespie optimizado con numba
+@njit
+def simulacion_gillespie(tiempo_simulacion, max_pasos=115000):
+    t = 0
+    U, Np, Pu = 1, 1, 1
+    tiempos = np.zeros(max_pasos)
+    valores_pu = np.zeros(max_pasos)
+    indice = 0
+
+    while t < tiempo_simulacion and indice < max_pasos - 1:
+        tasas = np.array([A, U * lambda_U, Np * lambda_Np, B * Pu])
+        tasa_total = tasas.sum()
+        if tasa_total == 0:
+            break
+
+        # Generar tiempo de reacción
+        tau = np.random.exponential(1 / tasa_total)
+
+        # Calcular probabilidades acumuladas
+        probabilidades = tasas / tasa_total
+        probabilidades_acumuladas = np.cumsum(probabilidades)
+
+        # Seleccionar reacción usando búsqueda binaria
+        r_index = np.searchsorted(probabilidades_acumuladas, np.random.rand())
+        # Actualizar cantidades de U, Np y Pu
+        U, Np, Pu = U + R[r_index, 0], Np + R[r_index, 1], Pu + R[r_index, 2]
+        
+        t += tau
+        tiempos[indice] = t
+        valores_pu[indice] = Pu
+        indice += 1
+    if t<30 and indice <114000:    
+        print(t, indice)
+    return valores_pu[:indice]
+
+# Parámetros de simulación
+num_simulaciones = 1000
+tiempo_simulacion = 30
+
+# Ejecutar simulaciones
+resultados_pu = np.array([simulacion_gillespie(tiempo_simulacion)[-1] for _ in range(num_simulaciones)])
+print(np.max(resultados_pu))
+
+# Probabilidad de que Pu supere el umbral crítico
+num_critico = np.sum(resultados_pu >= 80)
+probabilidad_critica = num_critico / num_simulaciones * 100
+print(f"\nProbabilidad de que Pu llegue a 80 o más: {probabilidad_critica:.3f}" + "%")
+
+# Fin de la medición del tiempo de ejecución
+end_time = time.time()
+execution_time = end_time - start_time
+print(f"\nTiempo total de ejecución: {execution_time:.4f} segundos")
+
+#La simulacion por una vez
+pu_simulacion = simulacion_gillespie(tiempo_simulacion)
+
+# Crear un eje temporal estimado (suponiendo tiempos de reacción constantes)
+tiempos_simulacion = np.linspace(0, tiempo_simulacion, len(pu_simulacion))
+
+# Graficar ambas soluciones
+plt.figure(figsize=(10, 6))
+plt.plot(sol.t, sol.y[2], label="Pu - Solución Determinista", color="blue", linewidth=2)
+plt.plot(tiempos_simulacion, pu_simulacion, label="Pu - Simulación Estocástica", color="red", alpha=0.5)
+plt.xlabel("Tiempo (días)")
+plt.ylabel("Cantidad de Plutonio-239 (Pu)")
+plt.title("Comparación entre la solución determinista y la simulación estocástica de Pu")
+plt.legend()
+plt.grid()
+#plt.show()
+
+# Histograma de los valores finales de Pu
+plt.figure(figsize=(10, 6))
+plt.hist(resultados_pu, bins=101, color='blue', edgecolor='black', alpha=0.7)
+plt.xlabel("Cantidad final de Pu")
+plt.ylabel("Frecuencia")
+plt.title("Histograma de los valores finales de Pu en las simulaciones de Gillespie")
+plt.grid()
+#plt.show()
