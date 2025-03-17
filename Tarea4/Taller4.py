@@ -229,8 +229,8 @@ print(f"¿El Uranio-239 ha alcanzado estabilidad? {'Sí' if estabilidad[0] else 
 print(f"¿El Neptunio-239 ha alcanzado estabilidad? {'Sí' if estabilidad[1] else 'No'}")
 print(f"¿El Plutonio-239 ha alcanzado estabilidad? {'Sí' if estabilidad[2] else 'No'}")
 
-R = np.array([[1, 0, 0],[-1, 1, 0],[0, -1, 1],[0, 0, -1]])
-# Simulación estocástica con algoritmo de Gillespie optimizado con numba
+R = np.array([[1, 0, 0], [-1, 1, 0], [0, -1, 1], [0, 0, -1]])
+
 @njit
 def simulacion_gillespie(tiempo_simulacion, max_pasos=115000):
     t = 0
@@ -245,66 +245,58 @@ def simulacion_gillespie(tiempo_simulacion, max_pasos=115000):
         if tasa_total == 0:
             break
 
-        # Generar tiempo de reacción
         tau = np.random.exponential(1 / tasa_total)
-
-        # Calcular probabilidades acumuladas
         probabilidades = tasas / tasa_total
         probabilidades_acumuladas = np.cumsum(probabilidades)
-
-        # Seleccionar reacción usando búsqueda binaria
         r_index = np.searchsorted(probabilidades_acumuladas, np.random.rand())
-        # Actualizar cantidades de U, Np y Pu
+        
         U, Np, Pu = U + R[r_index, 0], Np + R[r_index, 1], Pu + R[r_index, 2]
         
         t += tau
         tiempos[indice] = t
         valores_pu[indice] = Pu
         indice += 1
-    if t<30 and indice <114000:    
-        print(t, indice)
-    return valores_pu[:indice]
+    
+    return tiempos[:indice], valores_pu[:indice]
 
-# Parámetros de simulación
-num_simulaciones = 1000
+num_simulaciones = 100
 tiempo_simulacion = 30
 
-# Ejecutar simulaciones
-resultados_pu = np.array([simulacion_gillespie(tiempo_simulacion)[-1] for _ in range(num_simulaciones)])
-print(np.max(resultados_pu))
+resultados_pu = []
+trayectorias_tiempo = []
+trayectorias_pu = []
 
-# Probabilidad de que Pu supere el umbral crítico
+for _ in range(num_simulaciones):
+    tiempos, valores_pu = simulacion_gillespie(tiempo_simulacion)
+    trayectorias_tiempo.append(tiempos)
+    trayectorias_pu.append(valores_pu)
+    resultados_pu.append(valores_pu[-1])
+
+resultados_pu = np.array(resultados_pu)
 num_critico = np.sum(resultados_pu >= 80)
 probabilidad_critica = num_critico / num_simulaciones * 100
-print(f"\nProbabilidad de que Pu llegue a 80 o más: {probabilidad_critica:.3f}" + "%")
+print(f"\n 5) Probabilidad de que Pu llegue a 80 o más: {probabilidad_critica:.3f}%")
+print(resultados_pu)
 
-# Fin de la medición del tiempo de ejecución
-end_time = time.time()
-execution_time = end_time - start_time
-print(f"\nTiempo total de ejecución: {execution_time:.4f} segundos")
-
-#La simulacion por una vez
-pu_simulacion = simulacion_gillespie(tiempo_simulacion)
-
-# Crear un eje temporal estimado (suponiendo tiempos de reacción constantes)
-tiempos_simulacion = np.linspace(0, tiempo_simulacion, len(pu_simulacion))
-
-# Graficar ambas soluciones
 plt.figure(figsize=(10, 6))
+for tiempos, valores_pu in zip(trayectorias_tiempo, trayectorias_pu):
+    plt.plot(tiempos, valores_pu, color='red', alpha=0.1)
 plt.plot(sol.t, sol.y[2], label="Pu - Solución Determinista", color="blue", linewidth=2)
-plt.plot(tiempos_simulacion, pu_simulacion, label="Pu - Simulación Estocástica", color="red", alpha=0.5)
 plt.xlabel("Tiempo (días)")
 plt.ylabel("Cantidad de Plutonio-239 (Pu)")
-plt.title("Comparación entre la solución determinista y la simulación estocástica de Pu")
+plt.title("Comparación entre la solución determinista y las simulaciones estocásticas de Pu")
 plt.legend()
 plt.grid()
-#plt.show()
+plt.savefig("Tarea4/5.pdf")
 
-# Histograma de los valores finales de Pu
 plt.figure(figsize=(10, 6))
 plt.hist(resultados_pu, bins=101, color='blue', edgecolor='black', alpha=0.7)
 plt.xlabel("Cantidad final de Pu")
 plt.ylabel("Frecuencia")
 plt.title("Histograma de los valores finales de Pu en las simulaciones de Gillespie")
 plt.grid()
+
 #plt.show()
+
+print("Para disminuir la probabilidad de alcanzar la criticalidad se puede retirar más plutonio por día, "
+"así como se puede insertar menos uranio a la planta, de manera a generar menos neptunio y plutonio.")
