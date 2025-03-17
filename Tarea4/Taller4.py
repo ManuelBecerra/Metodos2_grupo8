@@ -153,7 +153,7 @@ im = ax.imshow(espines, cmap='gray', animated=True)
 ani = animation.FuncAnimation(fig, update, frames=500, interval=50, blit=True)
 
 # Guardar animación
-ani.save("3.mp4", writer="ffmpeg", fps=30)
+ani.save("Tarea4/3.mp4", writer="ffmpeg", fps=30)
 #plt.show()
 
 '''Ejercicio 5: Evolución temporal de procesos estocásticos'''
